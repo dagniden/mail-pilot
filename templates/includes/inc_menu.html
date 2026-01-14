@@ -1,0 +1,48 @@
+<div class="collapse text-bg-dark" id="navbarHeader">
+  <div class="container">
+    <div class="row">
+      <div class="col-sm-8 col-md-7 py-4">
+        {% if user.is_authenticated %}
+          <h4 class="text-white">Привет, {{ user.first_name|default:user.username }}!</h4>
+          <p class="text-white-50">Добро пожаловать в магазин игр. Вы авторизованы как {{ user.email }}</p>
+        {% else %}
+          <h4 class="text-white">Добро пожаловать!</h4>
+          <p class="text-white-50">Войдите в систему или зарегистрируйтесь, чтобы получить доступ ко всем возможностям
+            магазина</p>
+        {% endif %}
+      </div>
+      <div class="col-sm-4 offset-md-1 py-4"><h4>Навигация</h4>
+        <ul class="list-unstyled">
+          <li><a href="{% url 'catalog:index' %}" class="text-white">Главная</a></li>
+          <li><a href="{% url 'blog:post_list' %}" class="text-white">Блог</a></li>
+          <li><a href="{% url 'catalog:contacts' %}" class="text-white">Контакты</a></li>
+
+
+          {% if user.is_authenticated %}
+            <li><a href="{% url 'catalog:product_create' %}" class="text-white">Добавить продукт</a></li>
+            <li><a href="{% url 'users:profile' %}" class="text-white">Мой профиль</a></li>
+            <li>
+              <form method="post" action="{% url 'users:logout' %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-link text-white text-decoration-none p-0"
+                        style="border: none; background: none; cursor: pointer;">Выйти
+                </button>
+              </form>
+            </li>
+          {% else %}
+            <li><a href="{% url 'users:login' %}" class="text-white">Войти</a></li>
+            <li><a href="{% url 'users:register' %}" class="text-white">Регистрация</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="navbar navbar-dark bg-dark shadow-sm">
+  <div class="container"><a href="#" class="navbar-brand d-flex align-items-center">
+  </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarHeader"
+            aria-controls="navbarHeader" aria-expanded="false" aria-label="Toggle navigation"><span
+            class="navbar-toggler-icon"></span></button>
+  </div>
+</div>
