@@ -4,43 +4,30 @@ from django.utils import timezone
 
 class Client(models.Model):
     email = models.EmailField(
-        unique=True,
-        blank=False,
-        verbose_name='Email',
-        help_text='Введите email адрес'
+        unique=True, blank=False, verbose_name="Email", help_text="Введите email адрес"
     )
     full_name = models.CharField(
         max_length=255,
-        verbose_name='Полное имя получателя',
-        help_text='Введите полное имя'
+        verbose_name="Полное имя получателя",
+        help_text="Введите полное имя",
     )
     owner = models.ForeignKey(
-        'users.CustomUser',
+        "users.CustomUser",
         on_delete=models.CASCADE,
-        related_name='clients',
-        verbose_name='Владелец записи'
+        related_name="clients",
+        verbose_name="Владелец записи",
     )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Дата создания'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Дата обновления'
-    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
     comment = models.TextField(
-        blank=True,
-        verbose_name='Комментарий',
-        help_text='Введите комментарий'
+        blank=True, verbose_name="Комментарий", help_text="Введите комментарий"
     )
 
     class Meta:
-        ordering = ['full_name']
-        verbose_name = 'Клиент'
-        verbose_name_plural = 'Клиенты'
-        permissions = [
-            ('can_view_all_recipients', 'Can view all recipients')
-        ]
+        ordering = ["full_name"]
+        verbose_name = "Клиент"
+        verbose_name_plural = "Клиенты"
+        permissions = [("can_view_all_recipients", "Can view all recipients")]
 
     def __str__(self):
         return f"{self.full_name} <{self.email}>"
@@ -50,35 +37,27 @@ class MessageTemplate(models.Model):
     subject = models.CharField(
         max_length=255,
         blank=False,
-        verbose_name='Тема письма',
-        help_text='Введите тему письма'
+        verbose_name="Тема письма",
+        help_text="Введите тему письма",
     )
     body = models.TextField(
-        blank=False,
-        verbose_name='Тело письма',
-        help_text='Введите тело письма'
+        blank=False, verbose_name="Тело письма", help_text="Введите тело письма"
     )
     owner = models.ForeignKey(
-        'users.CustomUser',
+        "users.CustomUser",
         on_delete=models.CASCADE,
-        related_name='templates',
-        verbose_name='Владелец записи'
+        related_name="templates",
+        verbose_name="Владелец записи",
     )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Дата создания'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Дата обновления'
-    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
 
     class Meta:
-        verbose_name = 'Шаблон сообщения'
-        verbose_name_plural = 'Шаблоны сообщений'
-        ordering = ['-created_at']
+        verbose_name = "Шаблон сообщения"
+        verbose_name_plural = "Шаблоны сообщений"
+        ordering = ["-created_at"]
         permissions = [
-            ('can_view_all_messages', 'Can view all messages'),
+            ("can_view_all_messages", "Can view all messages"),
         ]
 
     def __str__(self):
@@ -94,49 +73,42 @@ class Campaign(models.Model):
     message_template = models.ForeignKey(
         MessageTemplate,
         on_delete=models.PROTECT,
-        related_name='campaigns',
-        verbose_name='Шаблон сообщения',
-        help_text='Выберите шаблон сообщения'
+        related_name="campaigns",
+        verbose_name="Шаблон сообщения",
+        help_text="Выберите шаблон сообщения",
     )
     clients = models.ManyToManyField(
         Client,
-        related_name='campaigns',
-        verbose_name='Клиенты',
-        help_text='Выберите получателей рассылки'
+        related_name="campaigns",
+        verbose_name="Клиенты",
+        help_text="Выберите получателей рассылки",
     )
     owner = models.ForeignKey(
-        'users.CustomUser',
+        "users.CustomUser",
         on_delete=models.CASCADE,
-        related_name='campaigns',
-        verbose_name='Владелец записи'
+        related_name="campaigns",
+        verbose_name="Владелец записи",
     )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Дата создания'
-    )
-    status = models.CharField(
-        max_length=20,
-        choices=Status,
-        default=Status.CREATED
-    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    status = models.CharField(max_length=20, choices=Status, default=Status.CREATED)
     start_time = models.DateTimeField(
         blank=False,
-        verbose_name='Время начала',
-        help_text='Укажите дату и время начала рассылки'
+        verbose_name="Время начала",
+        help_text="Укажите дату и время начала рассылки",
     )
     end_time = models.DateTimeField(
         blank=False,
-        verbose_name='Время окончания',
-        help_text='Укажите дату и время окончания рассылки'
+        verbose_name="Время окончания",
+        help_text="Укажите дату и время окончания рассылки",
     )
 
     class Meta:
-        verbose_name = 'Рассылка'
-        verbose_name_plural = 'Рассылки'
-        ordering = ['-created_at']
+        verbose_name = "Рассылка"
+        verbose_name_plural = "Рассылки"
+        ordering = ["-created_at"]
         permissions = [
-            ('can_view_all_campaigns', 'Can view all campaigns'),
-            ('can_disable_campaign', 'Can disable campaign'),
+            ("can_view_all_campaigns", "Can view all campaigns"),
+            ("can_disable_campaign", "Can disable campaign"),
         ]
 
     def __str__(self):
@@ -154,7 +126,7 @@ class Campaign(models.Model):
 
         if self.status != new_status:
             self.status = new_status
-            self.save(update_fields=['status'])
+            self.save(update_fields=["status"])
 
     def can_be_sent(self):
         current_time = timezone.now()
