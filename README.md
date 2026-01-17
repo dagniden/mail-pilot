@@ -228,7 +228,7 @@
 3. Система проверяет временное окно (start_time <= now <= end_time)
 4. Для каждого получателя:
    a. Вызывает send_mail()
-   b. Создает запись MailingAttempt:
+   b. Создает запись CampaignAttempt:
       - При успехе: status='Успешно', server_response='OK'
       - При ошибке: status='Не успешно', server_response=str(error)
 5. Система показывает результат отправки
@@ -238,11 +238,11 @@
 #### UC-5.2: Запуск рассылки через командную строку
 ```
 Актор: Система/Администратор
-Команда: python manage.py send_mailings
+Команда: python manage.py send_campaigns
 Основной поток:
 1. Команда находит все рассылки:
    - start_time <= now <= end_time
-   - status = "Создана" или "Запущена"
+   - status = "created" или "in_progress"
 2. Для каждой рассылки выполняет отправку (аналогично UC-5.1)
 3. Логирует результаты в stdout
 ```
@@ -339,20 +339,20 @@ mail-pilot/
 │   └── management/
 │       └── commands/
 │           └── create_groups.py  # Создание группы "Менеджеры"
-├── mailings/                    # Приложение: рассылки
-│   ├── models.py               # Recipient, Message, Mailing, MailingAttempt
+├── campaigns/                    # Приложение: рассылки
+│   ├── models.py               # Client, MessageTemplate, Campaign, CampaignAttempt
 │   ├── views.py                # CRUD для всех моделей, запуск рассылок
 │   ├── forms.py                # Формы для моделей
 │   ├── urls.py                 # Маршруты рассылок
 │   ├── services.py             # Бизнес-логика отправки
 │   └── management/
 │       └── commands/
-│           └── send_mailings.py  # Команда запуска рассылок
+│           └── send_campaigns.py  # Команда запуска рассылок
 ├── templates/                   # Шаблоны
 │   ├── base.html               # Базовый шаблон
 │   ├── index.html              # Главная страница
 │   ├── users/
-│   ├── mailings/
+│   ├── campaigns/
 │   └── registration/           # Шаблоны аутентификации
 ├── static/                      # Статические файлы
 ├── media/                       # Загружаемые файлы (аватары)
@@ -368,7 +368,7 @@ mail-pilot/
 | Приложение | Назначение | Модели |
 |------------|------------|---------|
 | `users` | Аутентификация и управление пользователями | `CustomUser` |
-| `mailings` | Управление рассылками, сообщениями, получателями | `Recipient`, `Message`, `Mailing`, `MailingAttempt` |
+| `campaigns` | Управление рассылками, сообщениями, получателями | `Client`, `MessageTemplate`, `Campaign`, `CampaignAttempt` |
 
 ---
 
@@ -382,14 +382,14 @@ mail-pilot/
 |--------|----------|----------------|
 | `CustomUser` | Пользователь системы (наследуется от AbstractUser) | - |
 
-#### Приложение `mailings`
+#### Приложение `campaigns`
 
 | Модель | Описание | Ключевые связи |
 |--------|----------|----------------|
-| `Recipient` | Получатель рассылки (клиент) | `owner` → CustomUser |
-| `Message` | Шаблон сообщения для рассылки | `owner` → CustomUser |
-| `Mailing` | Рассылка (связывает сообщение и получателей) | `owner` → CustomUser<br>`message` → Message<br>`recipients` → Recipient (M2M) |
-| `MailingAttempt` | Попытка отправки письма | `mailing` → Mailing<br>`recipient` → Recipient (опционально) |
+| `Client` | Получатель рассылки (клиент) | `owner` → CustomUser |
+| `MessageTemplate` | Шаблон сообщения для рассылки | `owner` → CustomUser |
+| `Campaign` | Рассылка (связывает сообщение и получателей) | `owner` → CustomUser<br>`message_template` → MessageTemplate<br>`clients` → Client (M2M) |
+| `CampaignAttempt` | Попытка отправки письма | `campaign` → Campaign<br>`client` → Client (опционально) |
 
 ### Концептуальная ERD
 
@@ -408,43 +408,43 @@ mail-pilot/
          ├──────────────────────┐
          │                      │
          ▼                      ▼
-┌─────────────────┐    ┌─────────────────┐
-│   Recipient     │    │    Message      │
-│  (mailings)     │    │  (mailings)     │
-│─────────────────│    │─────────────────│
-│ id (PK)         │    │ id (PK)         │
-│ email (unique)  │    │ subject         │
-│ full_name       │    │ body            │
-│ comment         │    │ owner (FK)      │
-│ owner (FK)      │    └────────┬────────┘
+┌─────────────────┐    ┌─────────────────────┐
+│     Client      │    │  MessageTemplate    │
+│  (campaigns)    │    │   (campaigns)       │
+│─────────────────│    │─────────────────────│
+│ id (PK)         │    │ id (PK)             │
+│ email (unique)  │    │ subject             │
+│ full_name       │    │ body                │
+│ comment         │    │ owner (FK)          │
+│ owner (FK)      │    └────────┬────────────┘
 └────────┬────────┘             │
-         │                      │ message (FK)
+         │                      │ message_template (FK)
          │                      │
-         │            ┌─────────▼────────┐
-         │            │    Mailing       │
-         │            │  (mailings)      │
-         │            │──────────────────│
-         │            │ id (PK)          │
-         │◄───────────┤ recipients (M2M) │
-         │ M2M        │ message (FK)     │
-         │            │ start_time       │
-         │            │ end_time         │
-         │            │ status           │
-         │            │ owner (FK)       │
-         │            └─────────┬────────┘
-         │                      │ mailing (FK)
+         │            ┌─────────▼──────────┐
+         │            │     Campaign       │
+         │            │   (campaigns)      │
+         │            │────────────────────│
+         │            │ id (PK)            │
+         │◄───────────┤ clients (M2M)      │
+         │ M2M        │ message_template   │
+         │            │ start_time         │
+         │            │ end_time           │
+         │            │ status             │
+         │            │ owner (FK)         │
+         │            └─────────┬──────────┘
+         │                      │ campaign (FK)
          │                      ▼
-         │            ┌─────────────────┐
-         └────────────┤ MailingAttempt  │
-          recipient   │  (mailings)     │
-          (FK, opt)   │─────────────────│
-                      │ id (PK)         │
-                      │ mailing (FK)    │
-                      │ recipient (FK)  │
-                      │ attempt_time    │
-                      │ status          │
-                      │ server_response │
-                      └─────────────────┘
+         │            ┌──────────────────────┐
+         └────────────┤  CampaignAttempt     │
+          client      │   (campaigns)        │
+          (FK, opt)   │──────────────────────│
+                      │ id (PK)              │
+                      │ campaign (FK)        │
+                      │ client (FK)          │
+                      │ attempt_time         │
+                      │ status               │
+                      │ server_response      │
+                      └──────────────────────┘
 ```
 
 ---
@@ -511,7 +511,7 @@ REQUIRED_FIELDS = []  # email уже обязателен как USERNAME_FIELD
 
 ---
 
-### 4.2 Recipient (приложение `mailings`)
+### 4.2 Client (приложение `campaigns`)
 
 **Назначение:** Получатель рассылки (клиент в базе пользователя).
 
@@ -523,7 +523,7 @@ REQUIRED_FIELDS = []  # email уже обязателен как USERNAME_FIELD
 | `email` | EmailField | unique=True, blank=False | Email получателя (уникальный) |
 | `full_name` | CharField | max_length=255, blank=False | Ф.И.О. |
 | `comment` | TextField | blank=True | Комментарий |
-| `owner` | ForeignKey | to=CustomUser, on_delete=CASCADE, related_name='recipients' | Владелец |
+| `owner` | ForeignKey | to=CustomUser, on_delete=CASCADE, related_name='clients' | Владелец |
 | `created_at` | DateTimeField | auto_now_add=True | Дата создания |
 
 **Методы:**
@@ -539,13 +539,13 @@ class Meta:
     verbose_name_plural = 'Получатели'
     ordering = ['full_name']
     permissions = [
-        ('can_view_all_recipients', 'Can view all recipients'),
+        ('can_view_all_recipients', 'Can view all clients'),
     ]
 ```
 
 ---
 
-### 4.3 Message (приложение `mailings`)
+### 4.3 MessageTemplate (приложение `campaigns`)
 
 **Назначение:** Шаблон сообщения для рассылки.
 
@@ -556,7 +556,7 @@ class Meta:
 | `id` | BigAutoField | primary_key=True | Первичный ключ |
 | `subject` | CharField | max_length=255, blank=False | Тема письма |
 | `body` | TextField | blank=False | Тело письма (может содержать HTML) |
-| `owner` | ForeignKey | to=CustomUser, on_delete=CASCADE, related_name='messages' | Владелец |
+| `owner` | ForeignKey | to=CustomUser, on_delete=CASCADE, related_name='templates' | Владелец |
 | `created_at` | DateTimeField | auto_now_add=True | Дата создания |
 | `updated_at` | DateTimeField | auto_now=True | Дата последнего изменения |
 
@@ -573,13 +573,13 @@ class Meta:
     verbose_name_plural = 'Сообщения'
     ordering = ['-created_at']
     permissions = [
-        ('can_view_all_messages', 'Can view all messages'),
+        ('can_view_all_messages', 'Can view all message_templates'),
     ]
 ```
 
 ---
 
-### 4.4 Mailing (приложение `mailings`)
+### 4.4 Campaign (приложение `campaigns`)
 
 **Назначение:** Рассылка, связывающая сообщение с получателями.
 
@@ -588,27 +588,27 @@ class Meta:
 | Поле | Тип | Параметры | Описание |
 |------|-----|-----------|----------|
 | `id` | BigAutoField | primary_key=True | Первичный ключ |
-| `message` | ForeignKey | to=Message, on_delete=PROTECT, related_name='mailings' | Сообщение |
-| `recipients` | ManyToManyField | to=Recipient | Получатели |
+| `message_template` | ForeignKey | to=MessageTemplate, on_delete=PROTECT, related_name='campaigns' | Сообщение |
+| `clients` | ManyToManyField | to=Client | Получатели |
 | `start_time` | DateTimeField | blank=False | Дата и время начала |
 | `end_time` | DateTimeField | blank=False | Дата и время окончания |
-| `status` | CharField | max_length=20, choices=STATUS_CHOICES, default='Создана' | Статус |
-| `owner` | ForeignKey | to=CustomUser, on_delete=CASCADE, related_name='mailings' | Владелец |
+| `status` | CharField | max_length=20, choices=STATUS_CHOICES, default='created' | Статус |
+| `owner` | ForeignKey | to=CustomUser, on_delete=CASCADE, related_name='campaigns' | Владелец |
 | `created_at` | DateTimeField | auto_now_add=True | Дата создания |
 
 **Choices:**
 ```python
 STATUS_CHOICES = [
-    ('Создана', 'Создана'),
-    ('Запущена', 'Запущена'),
-    ('Завершена', 'Завершена'),
+    ('created', 'Создана'),
+    ('in_progress', 'Запущена'),
+    ('finished', 'Завершена'),
 ]
 ```
 
 **Методы:**
 ```python
 def __str__(self):
-    return f"Рассылка #{self.id}: {self.message.subject}"
+    return f"Рассылка #{self.id}: {self.message_template.subject}"
 
 def update_status(self):
     """Динамически обновляет статус на основе текущего времени"""
@@ -616,11 +616,11 @@ def update_status(self):
     now = timezone.now()
 
     if now < self.start_time:
-        new_status = 'Создана'
+        new_status = 'created'
     elif self.start_time <= now <= self.end_time:
-        new_status = 'Запущена'
+        new_status = 'in_progress'
     else:
-        new_status = 'Завершена'
+        new_status = 'finished'
 
     if self.status != new_status:
         self.status = new_status
@@ -651,14 +651,14 @@ class Meta:
     verbose_name_plural = 'Рассылки'
     ordering = ['-created_at']
     permissions = [
-        ('can_view_all_mailings', 'Can view all mailings'),
-        ('can_disable_mailing', 'Can disable mailing'),
+        ('can_view_all_campaigns', 'Can view all campaigns'),
+        ('can_disable_campaign', 'Can disable campaign'),
     ]
 ```
 
 ---
 
-### 4.5 MailingAttempt (приложение `mailings`)
+### 4.5 CampaignAttempt (приложение `campaigns`)
 
 **Назначение:** Попытка отправки письма (лог).
 
@@ -667,8 +667,8 @@ class Meta:
 | Поле | Тип | Параметры | Описание |
 |------|-----|-----------|----------|
 | `id` | BigAutoField | primary_key=True | Первичный ключ |
-| `mailing` | ForeignKey | to=Mailing, on_delete=CASCADE, related_name='attempts' | Рассылка |
-| `recipient` | ForeignKey | to=Recipient, on_delete=SET_NULL, null=True, blank=True | Получатель (опционально) |
+| `campaign` | ForeignKey | to=Campaign, on_delete=CASCADE, related_name='attempts' | Рассылка |
+| `client` | ForeignKey | to=Client, on_delete=SET_NULL, null=True, blank=True | Получатель (опционально) |
 | `attempt_time` | DateTimeField | auto_now_add=True | Дата и время попытки |
 | `status` | CharField | max_length=20, choices=STATUS_CHOICES | Статус ('Успешно'/'Не успешно') |
 | `server_response` | TextField | blank=True | Ответ почтового сервера или текст ошибки |
@@ -684,8 +684,8 @@ STATUS_CHOICES = [
 **Методы:**
 ```python
 def __str__(self):
-    recipient_info = f" → {self.recipient.email}" if self.recipient else ""
-    return f"Попытка #{self.id}{recipient_info}: {self.status}"
+    client_info = f" → {self.client.email}" if self.client else ""
+    return f"Попытка #{self.id}{client_info}: {self.status}"
 ```
 
 **Meta:**
@@ -722,7 +722,7 @@ class Meta:
                │                               │
                ▼                               ▼
 ┌──────────────────────────────────┐ ┌────────────────────────────────┐
-│    Recipient (mailings)          │ │     Message (mailings)         │
+│    Client (campaigns)          │ │     MessageTemplate (campaigns)         │
 ├──────────────────────────────────┤ ├────────────────────────────────┤
 │ PK │ id: BigAutoField            │ │ PK │ id: BigAutoField          │
 │ UK │ email: EmailField           │ │    │ subject: CharField(255)   │
@@ -732,28 +732,28 @@ class Meta:
 │    │ created_at: DateTimeField   │ │    │ updated_at: DateTimeField │
 └──────────────┬───────────────────┘ └────────────┬───────────────────┘
                │                                  │
-               │ recipients (M2M)                 │ message (FK, PROTECT)
+               │ clients (M2M)                 │ message_template (FK, PROTECT)
                │                                  │
                │                ┌─────────────────▼──────────────────┐
-               │                │        Mailing (mailings)          │
+               │                │        Campaign (campaigns)          │
                │                ├────────────────────────────────────┤
                │                │ PK │ id: BigAutoField              │
-               └────────────────┤ FK │ message → Message             │
-                     M2M        │ M2M│ recipients → Recipient        │
+               └────────────────┤ FK │ message_template → MessageTemplate             │
+                     M2M        │ M2M│ clients → Client        │
                                 │    │ start_time: DateTimeField     │
                                 │    │ end_time: DateTimeField       │
                                 │    │ status: CharField(20)         │
                                 │ FK │ owner → CustomUser            │
                                 │    │ created_at: DateTimeField     │
                                 └────────────┬───────────────────────┘
-                                             │ mailing (FK, CASCADE)
+                                             │ campaign (FK, CASCADE)
                                              ▼
                       ┌────────────────────────────────────────────────┐
-                      │        MailingAttempt (mailings)               │
+                      │        CampaignAttempt (campaigns)               │
                       ├────────────────────────────────────────────────┤
                       │ PK │ id: BigAutoField                          │
-                      │ FK │ mailing → Mailing                         │
-                      │ FK │ recipient → Recipient (NULL, SET_NULL)    │
+                      │ FK │ campaign → Campaign                         │
+                      │ FK │ client → Client (NULL, SET_NULL)    │
                       │    │ attempt_time: DateTimeField (auto_now_add)│
                       │    │ status: CharField(20)                     │
                       │    │ server_response: TextField                │
@@ -794,9 +794,9 @@ class Meta:
 ```
 
 **Поля и данные:**
-- **Всего рассылок:** `Mailing.objects.filter(owner=request.user).count()`
-- **Активных рассылок:** `Mailing.objects.filter(owner=request.user, status='Запущена').count()`
-- **Уникальных получателей:** `Recipient.objects.filter(owner=request.user).count()`
+- **Всего рассылок:** `Campaign.objects.filter(owner=request.user).count()`
+- **Активных рассылок:** `Campaign.objects.filter(owner=request.user, status='in_progress').count()`
+- **Уникальных получателей:** `Client.objects.filter(owner=request.user).count()`
 
 **Навигация:**
 - Header содержит ссылки на основные разделы (только для авторизованных):
@@ -880,10 +880,10 @@ class Meta:
 
 ---
 
-### 5.5 Список получателей (`mailings/recipient_list.html`)
+### 5.5 Список получателей (`campaigns/client_list.html`)
 
-**URL:** `/mailings/recipients/`
-**View:** `RecipientListView` (ListView)
+**URL:** `/campaigns/clients/`
+**View:** `ClientListView` (ListView)
 **Доступ:** Авторизованные пользователи
 
 **Таблица:**
@@ -894,20 +894,20 @@ class Meta:
 | ... | ... | ... | ... |
 
 **Кнопки:**
-- **[+ Создать получателя]** → ссылка на `/mailings/recipients/create/`
+- **[+ Создать получателя]** → ссылка на `/campaigns/clients/create/`
 
 **Фильтрация:**
-- QuerySet ограничен: `Recipient.objects.filter(owner=request.user)`
+- QuerySet ограничен: `Client.objects.filter(owner=request.user)`
 
 ---
 
-### 5.6 Создание/Редактирование получателя (`mailings/recipient_form.html`)
+### 5.6 Создание/Редактирование получателя (`campaigns/client_form.html`)
 
 **URL:**
-- Создание: `/mailings/recipients/create/`
-- Редактирование: `/mailings/recipients/<pk>/edit/`
+- Создание: `/campaigns/clients/create/`
+- Редактирование: `/campaigns/clients/<pk>/edit/`
 
-**View:** `RecipientCreateView` / `RecipientUpdateView`
+**View:** `ClientCreateView` / `ClientUpdateView`
 **Доступ:** Авторизованные (владельцы для редактирования)
 
 **Форма:**
@@ -924,10 +924,10 @@ class Meta:
 
 ---
 
-### 5.7 Список сообщений (`mailings/message_list.html`)
+### 5.7 Список сообщений (`campaigns/message_template_list.html`)
 
-**URL:** `/mailings/messages/`
-**View:** `MessageListView` (ListView)
+**URL:** `/campaigns/message_templates/`
+**View:** `MessageTemplateListView` (ListView)
 **Доступ:** Авторизованные пользователи
 
 **Карточки сообщений:**
@@ -942,17 +942,17 @@ class Meta:
 ```
 
 **Кнопки:**
-- **[+ Создать сообщение]** → ссылка на `/mailings/messages/create/`
+- **[+ Создать сообщение]** → ссылка на `/campaigns/message_templates/create/`
 
 ---
 
-### 5.8 Создание/Редактирование сообщения (`mailings/message_form.html`)
+### 5.8 Создание/Редактирование сообщения (`campaigns/message_template_form.html`)
 
 **URL:**
-- Создание: `/mailings/messages/create/`
-- Редактирование: `/mailings/messages/<pk>/edit/`
+- Создание: `/campaigns/message_templates/create/`
+- Редактирование: `/campaigns/message_templates/<pk>/edit/`
 
-**View:** `MessageCreateView` / `MessageUpdateView`
+**View:** `MessageTemplateCreateView` / `MessageTemplateUpdateView`
 
 **Форма:**
 
@@ -967,10 +967,10 @@ class Meta:
 
 ---
 
-### 5.9 Список рассылок (`mailings/mailing_list.html`)
+### 5.9 Список рассылок (`campaigns/campaign_list.html`)
 
-**URL:** `/mailings/`
-**View:** `MailingListView` (ListView)
+**URL:** `/campaigns/`
+**View:** `CampaignListView` (ListView)
 **Доступ:** Авторизованные пользователи
 
 **Таблица:**
@@ -981,7 +981,7 @@ class Meta:
 | 41 | Новинки | 8 | 20.12.2025 | 31.12.2025 | 🔴 Завершена | [👁️ Просмотр] |
 
 **Кнопки:**
-- **[+ Создать рассылку]** → `/mailings/create/`
+- **[+ Создать рассылку]** → `/campaigns/create/`
 
 **Цветовая индикация статусов:**
 - 🟡 Создана (серый)
@@ -990,13 +990,13 @@ class Meta:
 
 ---
 
-### 5.10 Создание/Редактирование рассылки (`mailings/mailing_form.html`)
+### 5.10 Создание/Редактирование рассылки (`campaigns/campaign_form.html`)
 
 **URL:**
-- Создание: `/mailings/create/`
-- Редактирование: `/mailings/<pk>/edit/`
+- Создание: `/campaigns/create/`
+- Редактирование: `/campaigns/<pk>/edit/`
 
-**View:** `MailingCreateView` / `MailingUpdateView`
+**View:** `CampaignCreateView` / `CampaignUpdateView`
 
 **Форма:**
 
@@ -1017,10 +1017,10 @@ class Meta:
 
 ---
 
-### 5.11 Детальная информация о рассылке (`mailings/mailing_detail.html`)
+### 5.11 Детальная информация о рассылке (`campaigns/campaign_detail.html`)
 
-**URL:** `/mailings/<pk>/`
-**View:** `MailingDetailView` (DetailView)
+**URL:** `/campaigns/<pk>/`
+**View:** `CampaignDetailView` (DetailView)
 **Доступ:** Владелец или менеджер
 
 **Структура страницы:**
@@ -1053,20 +1053,20 @@ class Meta:
 ```
 
 **Кнопки:**
-- **[▶️ Запустить рассылку]** → POST `/mailings/<pk>/send/` → запуск отправки (видна только если `status='Запущена'`)
-- **[✏️ Редактировать]** → `/mailings/<pk>/edit/` (только если владелец)
-- **[🗑️ Удалить]** → POST `/mailings/<pk>/delete/` (только если владелец)
+- **[▶️ Запустить рассылку]** → POST `/campaigns/<pk>/send/` → запуск отправки (видна только если `status='in_progress'`)
+- **[✏️ Редактировать]** → `/campaigns/<pk>/edit/` (только если владелец)
+- **[🗑️ Удалить]** → POST `/campaigns/<pk>/delete/` (только если владелец)
 
 **Поведение:**
-- При загрузке страницы вызывается `mailing.update_status()` (динамическое обновление статуса)
+- При загрузке страницы вызывается `campaign.update_status()` (динамическое обновление статуса)
 - Попытки отображаются в обратном хронологическом порядке
 
 ---
 
 ### 5.12 Страница запуска рассылки (встроена в detail)
 
-**URL:** `/mailings/<pk>/send/` (POST)
-**View:** `SendMailingView` (View)
+**URL:** `/campaigns/<pk>/send/` (POST)
+**View:** `SendCampaignView` (View)
 **Доступ:** Владелец рассылки
 
 **Процесс:**
@@ -1074,7 +1074,7 @@ class Meta:
 2. Проверка временного окна (`can_be_sent()`)
 3. Для каждого получателя:
    - Попытка отправки через `send_mail()`
-   - Создание `MailingAttempt` с результатом
+   - Создание `CampaignAttempt` с результатом
 4. Редирект обратно на детальную страницу с сообщением о результате
 
 ---
@@ -1196,68 +1196,68 @@ urlpatterns = [
 
 ---
 
-### 6.2 Приложение `mailings`
+### 6.2 Приложение `campaigns`
 
-**urls.py (`mailings/urls.py`):**
+**urls.py (`campaigns/urls.py`):**
 
 ```python
 from django.urls import path
 from .views import (
     # Получатели
-    RecipientListView, RecipientCreateView,
-    RecipientUpdateView, RecipientDeleteView,
+    ClientListView, ClientCreateView,
+    ClientUpdateView, ClientDeleteView,
     # Сообщения
-    MessageListView, MessageCreateView,
-    MessageUpdateView, MessageDeleteView,
+    MessageTemplateListView, MessageTemplateCreateView,
+    MessageTemplateUpdateView, MessageTemplateDeleteView,
     # Рассылки
-    MailingListView, MailingCreateView,
-    MailingDetailView, MailingUpdateView, MailingDeleteView,
-    SendMailingView,
+    CampaignListView, CampaignCreateView,
+    CampaignDetailView, CampaignUpdateView, CampaignDeleteView,
+    SendCampaignView,
 )
 
-app_name = 'mailings'
+app_name = 'campaigns'
 
 urlpatterns = [
     # Получатели
-    path('recipients/', RecipientListView.as_view(), name='recipient_list'),
-    path('recipients/create/', RecipientCreateView.as_view(), name='recipient_create'),
-    path('recipients/<int:pk>/edit/', RecipientUpdateView.as_view(), name='recipient_update'),
-    path('recipients/<int:pk>/delete/', RecipientDeleteView.as_view(), name='recipient_delete'),
+    path('clients/', ClientListView.as_view(), name='client_list'),
+    path('clients/create/', ClientCreateView.as_view(), name='client_create'),
+    path('clients/<int:pk>/edit/', ClientUpdateView.as_view(), name='client_update'),
+    path('clients/<int:pk>/delete/', ClientDeleteView.as_view(), name='client_delete'),
 
     # Сообщения
-    path('messages/', MessageListView.as_view(), name='message_list'),
-    path('messages/create/', MessageCreateView.as_view(), name='message_create'),
-    path('messages/<int:pk>/edit/', MessageUpdateView.as_view(), name='message_update'),
-    path('messages/<int:pk>/delete/', MessageDeleteView.as_view(), name='message_delete'),
+    path('message_templates/', MessageTemplateListView.as_view(), name='message_template_list'),
+    path('message_templates/create/', MessageTemplateCreateView.as_view(), name='message_template_create'),
+    path('message_templates/<int:pk>/edit/', MessageTemplateUpdateView.as_view(), name='message_template_update'),
+    path('message_templates/<int:pk>/delete/', MessageTemplateDeleteView.as_view(), name='message_template_delete'),
 
     # Рассылки
-    path('', MailingListView.as_view(), name='mailing_list'),
-    path('create/', MailingCreateView.as_view(), name='mailing_create'),
-    path('<int:pk>/', MailingDetailView.as_view(), name='mailing_detail'),
-    path('<int:pk>/edit/', MailingUpdateView.as_view(), name='mailing_update'),
-    path('<int:pk>/delete/', MailingDeleteView.as_view(), name='mailing_delete'),
-    path('<int:pk>/send/', SendMailingView.as_view(), name='mailing_send'),
+    path('', CampaignListView.as_view(), name='campaign_list'),
+    path('create/', CampaignCreateView.as_view(), name='campaign_create'),
+    path('<int:pk>/', CampaignDetailView.as_view(), name='campaign_detail'),
+    path('<int:pk>/edit/', CampaignUpdateView.as_view(), name='campaign_update'),
+    path('<int:pk>/delete/', CampaignDeleteView.as_view(), name='campaign_delete'),
+    path('<int:pk>/send/', SendCampaignView.as_view(), name='campaign_send'),
 ]
 ```
 
-**Views (`mailings/views.py`):**
+**Views (`campaigns/views.py`):**
 
 | View | Тип | Миксины | Описание |
 |------|-----|---------|----------|
-| `RecipientListView` | ListView | LoginRequiredMixin | Фильтрует по owner |
-| `RecipientCreateView` | CreateView | LoginRequiredMixin | Устанавливает owner=request.user в form_valid() |
-| `RecipientUpdateView` | UpdateView | LoginRequiredMixin, UserPassesTestMixin | Проверка owner |
-| `RecipientDeleteView` | DeleteView | LoginRequiredMixin, UserPassesTestMixin | Проверка owner |
-| `MessageListView` | ListView | LoginRequiredMixin | Фильтрует по owner |
-| `MessageCreateView` | CreateView | LoginRequiredMixin | Устанавливает owner |
-| `MessageUpdateView` | UpdateView | LoginRequiredMixin, UserPassesTestMixin | Проверка owner |
-| `MessageDeleteView` | DeleteView | LoginRequiredMixin, UserPassesTestMixin | Проверка owner |
-| `MailingListView` | ListView | LoginRequiredMixin | Фильтрует по owner (или все для менеджеров) |
-| `MailingCreateView` | CreateView | LoginRequiredMixin | Устанавливает owner |
-| `MailingDetailView` | DetailView | LoginRequiredMixin | Вызывает update_status() |
-| `MailingUpdateView` | UpdateView | LoginRequiredMixin, UserPassesTestMixin | Проверка owner |
-| `MailingDeleteView` | DeleteView | LoginRequiredMixin, UserPassesTestMixin | Проверка owner |
-| `SendMailingView` | View | LoginRequiredMixin, UserPassesTestMixin | Запускает отправку |
+| `ClientListView` | ListView | LoginRequiredMixin | Фильтрует по owner |
+| `ClientCreateView` | CreateView | LoginRequiredMixin | Устанавливает owner=request.user в form_valid() |
+| `ClientUpdateView` | UpdateView | LoginRequiredMixin, UserPassesTestMixin | Проверка owner |
+| `ClientDeleteView` | DeleteView | LoginRequiredMixin, UserPassesTestMixin | Проверка owner |
+| `MessageTemplateListView` | ListView | LoginRequiredMixin | Фильтрует по owner |
+| `MessageTemplateCreateView` | CreateView | LoginRequiredMixin | Устанавливает owner |
+| `MessageTemplateUpdateView` | UpdateView | LoginRequiredMixin, UserPassesTestMixin | Проверка owner |
+| `MessageTemplateDeleteView` | DeleteView | LoginRequiredMixin, UserPassesTestMixin | Проверка owner |
+| `CampaignListView` | ListView | LoginRequiredMixin | Фильтрует по owner (или все для менеджеров) |
+| `CampaignCreateView` | CreateView | LoginRequiredMixin | Устанавливает owner |
+| `CampaignDetailView` | DetailView | LoginRequiredMixin | Вызывает update_status() |
+| `CampaignUpdateView` | UpdateView | LoginRequiredMixin, UserPassesTestMixin | Проверка owner |
+| `CampaignDeleteView` | DeleteView | LoginRequiredMixin, UserPassesTestMixin | Проверка owner |
+| `SendCampaignView` | View | LoginRequiredMixin, UserPassesTestMixin | Запускает отправку |
 
 ---
 
@@ -1270,13 +1270,13 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from mailings.views import IndexView
+from campaigns.views import IndexView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', IndexView.as_view(), name='index'),
     path('users/', include('users.urls')),
-    path('mailings/', include('mailings.urls')),
+    path('campaigns/', include('campaigns.urls')),
 ]
 
 if settings.DEBUG:
@@ -1321,20 +1321,20 @@ if settings.DEBUG:
 **В Meta моделей определены:**
 
 ```python
-# Recipient
+# Client
 permissions = [
-    ('can_view_all_recipients', 'Can view all recipients'),
+    ('can_view_all_recipients', 'Can view all clients'),
 ]
 
-# Message
+# MessageTemplate
 permissions = [
-    ('can_view_all_messages', 'Can view all messages'),
+    ('can_view_all_messages', 'Can view all message_templates'),
 ]
 
-# Mailing
+# Campaign
 permissions = [
-    ('can_view_all_mailings', 'Can view all mailings'),
-    ('can_disable_mailing', 'Can disable mailing'),
+    ('can_view_all_campaigns', 'Can view all campaigns'),
+    ('can_disable_campaign', 'Can disable campaign'),
 ]
 
 # CustomUser (в users)
@@ -1350,11 +1350,11 @@ permissions = [
 ```python
 # Фильтрация QuerySet по владельцу
 def get_queryset(self):
-    if self.request.user.has_perm('mailings.can_view_all_mailings'):
+    if self.request.user.has_perm('campaigns.can_view_all_campaigns'):
         # Менеджер видит все
-        return Mailing.objects.all()
+        return Campaign.objects.all()
     # Пользователь видит только свои
-    return Mailing.objects.filter(owner=self.request.user)
+    return Campaign.objects.filter(owner=self.request.user)
 
 # Проверка владельца при редактировании/удалении
 def test_func(self):
@@ -1365,12 +1365,12 @@ def test_func(self):
 **В шаблонах:**
 
 ```django
-{% if perms.mailings.can_disable_mailing %}
-    <a href="{% url 'mailings:mailing_disable' mailing.pk %}">Отключить</a>
+{% if perms.campaigns.can_disable_campaign %}
+    <a href="{% url 'campaigns:campaign_disable' campaign.pk %}">Отключить</a>
 {% endif %}
 
-{% if mailing.owner == request.user %}
-    <a href="{% url 'mailings:mailing_update' mailing.pk %}">Редактировать</a>
+{% if campaign.owner == request.user %}
+    <a href="{% url 'campaigns:campaign_update' campaign.pk %}">Редактировать</a>
 {% endif %}
 ```
 
@@ -1393,8 +1393,8 @@ class Command(BaseCommand):
                 codename__in=[
                     'can_view_all_recipients',
                     'can_view_all_messages',
-                    'can_view_all_mailings',
-                    'can_disable_mailing',
+                    'can_view_all_campaigns',
+                    'can_disable_campaign',
                     'can_block_user',
                 ]
             )
@@ -1413,9 +1413,9 @@ python manage.py create_groups
 
 ## 8. Команды управления
 
-### 8.1 Отправка рассылок (`send_mailings`)
+### 8.1 Отправка рассылок (`send_campaigns`)
 
-**Файл:** `mailings/management/commands/send_mailings.py`
+**Файл:** `campaigns/management/commands/send_campaigns.py`
 
 **Назначение:** Запуск отправки рассылок через командную строку (для cron/планировщика).
 
@@ -1431,43 +1431,43 @@ python manage.py create_groups
 ```python
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from mailings.models import Mailing
-from mailings.services import send_mailing
+from campaigns.models import Campaign
+from campaigns.services import send_campaign
 
 class Command(BaseCommand):
     help = 'Отправка рассылок, готовых к отправке'
 
     def handle(self, *args, **options):
         now = timezone.now()
-        mailings = Mailing.objects.filter(
+        campaigns = Campaign.objects.filter(
             start_time__lte=now,
             end_time__gte=now,
-        ).exclude(status='Завершена')
+        ).exclude(status='finished')
 
-        self.stdout.write(f'Найдено рассылок: {mailings.count()}')
+        self.stdout.write(f'Найдено рассылок: {campaigns.count()}')
 
-        for mailing in mailings:
+        for campaign in campaigns:
             try:
-                result = send_mailing(mailing)
+                result = send_campaign(campaign)
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f'Рассылка #{mailing.id}: отправлено {result["success"]}/{result["total"]}'
+                        f'Рассылка #{campaign.id}: отправлено {result["success"]}/{result["total"]}'
                     )
                 )
             except Exception as e:
                 self.stdout.write(
-                    self.style.ERROR(f'Ошибка в рассылке #{mailing.id}: {e}')
+                    self.style.ERROR(f'Ошибка в рассылке #{campaign.id}: {e}')
                 )
 ```
 
 **Запуск:**
 ```bash
-python manage.py send_mailings
+python manage.py send_campaigns
 ```
 
 **Планирование (cron):**
 ```cron
-*/10 * * * * cd /path/to/project && poetry run python manage.py send_mailings
+*/10 * * * * cd /path/to/project && poetry run python manage.py send_campaigns
 ```
 
 ---
@@ -1541,7 +1541,7 @@ INSTALLED_APPS = [
 
     # Local apps
     'users',
-    'mailings',
+    'campaigns',
 ]
 
 MIDDLEWARE = [
@@ -1629,7 +1629,7 @@ CACHES = {
 [tool.poetry]
 name = "mail-pilot"
 version = "1.0.0"
-description = "Email mailing service"
+description = "Email campaign service"
 authors = ["Your Name <you@example.com>"]
 
 [tool.poetry.dependencies]
@@ -1665,7 +1665,7 @@ poetry install
 - ✅ Есть файл зависимостей (`pyproject.toml`)
 - ✅ При проверке Flake8 не более 5 ошибок
 - ✅ Структура соответствует Django-проекту
-- ✅ Созданы приложения `users` и `mailings`
+- ✅ Созданы приложения `users` и `campaigns`
 - ✅ Настройки в папке `config/`
 - ✅ Все секреты в `.env`
 
@@ -1712,8 +1712,8 @@ poetry install
 - ✅ Статус рассылки обновляется динамически (`update_status()`)
 - ✅ Валидация: `start_time` не в прошлом, `start_time < end_time`
 - ✅ Реализована отправка через интерфейс
-- ✅ Реализована отправка через команду `send_mailings`
-- ✅ Для каждой попытки создается запись `MailingAttempt`
+- ✅ Реализована отправка через команду `send_campaigns`
+- ✅ Для каждой попытки создается запись `CampaignAttempt`
 - ✅ Логируются успешные и неуспешные попытки
 
 ### 10.7 Кеширование

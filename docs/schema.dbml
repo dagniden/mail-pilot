@@ -1,6 +1,6 @@
 // Mail Pilot Database Schema
 // Generated: 2026-01-17
-// Models: CustomUser, Client, MessageTemplate, Campaign
+// Models: CustomUser, Client, MessageTemplate, Campaign, CampaignAttempt
 
 Project mail_pilot {
   database_type: 'PostgreSQL'
@@ -112,25 +112,27 @@ Table campaigns_campaign_clients {
 }
 
 // ============================================
-// FUTURE MODELS (Planned)
+// CAMPAIGN ATTEMPTS
 // ============================================
 
-// Table campaigns_campaignattempt {
-//   id integer [pk, increment]
-//   campaign_id integer [not null, ref: > campaigns_campaign.id]
-//   client_id integer [null, ref: > campaigns_client.id]
-//   attempt_time timestamp [not null, default: `now()`]
-//   status varchar(20) [not null, note: 'Choices: success, failed']
-//   server_response text [null]
-//
-//   Indexes {
-//     campaign_id [name: 'idx_attempt_campaign']
-//     client_id [name: 'idx_attempt_client']
-//     attempt_time [name: 'idx_attempt_time']
-//   }
-//
-//   Note: 'Logs each email send attempt. One record per recipient per send.'
-// }
+Table campaigns_campaignattempt {
+  id integer [pk, increment]
+  campaign_id integer [not null, ref: > campaigns_campaign.id, note: 'CASCADE: logs deleted with campaign']
+  client_id integer [null, ref: > campaigns_client.id, note: 'SET_NULL: logs remain if client deleted']
+  attempt_time timestamp [not null, default: `now()`]
+  attempt_number integer [not null, default: 1, note: 'Auto-calculated on save()']
+  status varchar(20) [not null, default: 'failed', note: 'Choices: success, failed']
+  server_response text [null]
+
+  Indexes {
+    campaign_id [name: 'idx_attempt_campaign']
+    client_id [name: 'idx_attempt_client']
+    attempt_time [name: 'idx_attempt_time']
+    (campaign_id, client_id, attempt_number) [name: 'idx_attempt_tracking']
+  }
+
+  Note: 'Logs each email send attempt with retry tracking. attempt_number auto-increments per (campaign, client) pair.'
+}
 
 // ============================================
 // RELATIONSHIPS SUMMARY
@@ -141,6 +143,8 @@ Table campaigns_campaign_clients {
 // - CustomUser → MessageTemplate (one user owns many templates)
 // - CustomUser → Campaign (one user owns many campaigns)
 // - MessageTemplate → Campaign (one template can be used in many campaigns, PROTECT)
+// - Campaign → CampaignAttempt (one campaign has many attempts, CASCADE)
+// - Client → CampaignAttempt (one client can have many attempts, SET_NULL)
 
 // Many-to-Many:
 // - Campaign ↔ Client (via campaigns_campaign_clients)
