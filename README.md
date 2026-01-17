@@ -448,6 +448,11 @@ mail-pilot/
 ```
 
 ---
+### Схема таблиц
+
+![Database Schema](docs/mail-pilot-db.png)
+
+
 
 ## 4. Детальные спецификации моделей
 
