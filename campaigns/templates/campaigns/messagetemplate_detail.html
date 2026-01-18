@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}{{ message_template.subject }} - Mail Pilot{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="mb-4">
+    <a href="{% url 'campaigns:message_templates_list' %}" class="text-decoration-none">
+      ← Назад к списку
+    </a>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-header bg-white py-3">
+      <h3 class="mb-0">{{ message_template.subject }}</h3>
+    </div>
+    <div class="card-body">
+      <dl class="row mb-0">
+        <dt class="col-sm-3">Тема письма:</dt>
+        <dd class="col-sm-9">{{ message_template.subject }}</dd>
+
+        <dt class="col-sm-3">Тело письма:</dt>
+        <dd class="col-sm-9">
+          <div class="border rounded p-3 bg-light">
+            {{ message_template.body|linebreaks }}
+          </div>
+        </dd>
+
+        <dt class="col-sm-3">Создан:</dt>
+        <dd class="col-sm-9">{{ message_template.created_at|date:"d.m.Y H:i" }}</dd>
+
+        <dt class="col-sm-3">Обновлен:</dt>
+        <dd class="col-sm-9">{{ message_template.updated_at|date:"d.m.Y H:i" }}</dd>
+      </dl>
+    </div>
+    <div class="card-footer bg-white">
+      <a href="{% url 'campaigns:message_template_update' message_template.pk %}" class="btn btn-primary">
+        Редактировать
+      </a>
+      <a href="{% url 'campaigns:message_template_delete' message_template.pk %}" class="btn btn-outline-danger">
+        Удалить
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
