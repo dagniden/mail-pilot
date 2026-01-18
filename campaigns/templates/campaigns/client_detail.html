@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Клиент #{{ client.id }}</h1>
+
+  <ul>
+    <li><strong>Email:</strong> {{ client.email }}</li>
+    <li><strong>Имя:</strong> {{ client.full_name }}</li>
+    {% if client.comment %}
+      <li><strong>Комментарий:</strong> {{ client.comment }}</li>
+    {% endif %}
+  </ul>
+
+  <a href="{% url 'campaigns:client_update' client.pk %}">Редактировать</a>
+  <a href="{% url 'campaigns:client_delete' client.pk %}">Удалить</a>
+  <a href="{% url 'campaigns:client_list' %}">Назад к списку</a>
+{% endblock %}

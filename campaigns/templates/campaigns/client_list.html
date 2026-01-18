@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Список клиентов</h1>
+
+  <ul>
+    {% for client in clients %}
+      <li>
+        <a href="{% url 'campaigns:client_detail' client.pk %}">
+          {{ client.full_name }} ({{ client.email }})
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+
+{% endblock %}
