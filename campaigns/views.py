@@ -1,8 +1,9 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from campaigns.forms import ClientForm, MessageTemplateForm, CampaignForm
 from campaigns.models import Client, MessageTemplate, Campaign
+from campaigns.services import CampaignService
 
 
 class ClientListView(ListView):
@@ -82,6 +83,13 @@ class CampaignDetailView(DetailView):
         obj = super().get_object(queryset)
         obj.update_status()
         return obj
+
+    def post(self, request, *args, **kwargs):
+        campaign = self.get_object()
+        if "send_campaign" in request.POST:
+            CampaignService.send_campaign(campaign)
+        return redirect('campaigns:campaign_detail', pk=campaign.pk)
+
 
 
 class CampaignCreateView(CreateView):
