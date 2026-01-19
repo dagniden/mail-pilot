@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}{{ campaign.message_template.subject }} - Mail Pilot{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="mb-4">
+    <a href="{% url 'campaigns:campaign_list' %}" class="text-decoration-none">
+      ← Назад к списку
+    </a>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-header bg-white py-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <h3 class="mb-0">{{ campaign.message_template.subject }}</h3>
+        {% if campaign.status == 'created' %}
+          <span class="badge bg-secondary fs-6">Создана</span>
+        {% elif campaign.status == 'in_progress' %}
+          <span class="badge bg-success fs-6">В процессе</span>
+        {% elif campaign.status == 'finished' %}
+          <span class="badge bg-info fs-6">Завершена</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="card-body">
+      <dl class="row mb-0">
+        <dt class="col-sm-3">Шаблон письма:</dt>
+        <dd class="col-sm-9">
+          <a href="{% url 'campaigns:message_template_detail' campaign.message_template.pk %}">
+            {{ campaign.message_template.subject }}
+          </a>
+        </dd>
+
+        <dt class="col-sm-3">Количество клиентов:</dt>
+        <dd class="col-sm-9">{{ campaign.clients.count }}</dd>
+
+        <dt class="col-sm-3">Список клиентов:</dt>
+        <dd class="col-sm-9">
+          <ul class="list-unstyled mb-0">
+            {% for client in campaign.clients.all %}
+              <li>
+                <a href="{% url 'campaigns:client_detail' client.pk %}">
+                  {{ client.full_name }} ({{ client.email }})
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </dd>
+
+        <dt class="col-sm-3">Статус:</dt>
+        <dd class="col-sm-9">
+          {% if campaign.status == 'created' %}
+            Создана
+          {% elif campaign.status == 'in_progress' %}
+            В процессе
+          {% elif campaign.status == 'finished' %}
+            Завершена
+          {% endif %}
+        </dd>
+
+        <dt class="col-sm-3">Время начала:</dt>
+        <dd class="col-sm-9">{{ campaign.start_time|date:"d.m.Y H:i" }}</dd>
+
+        <dt class="col-sm-3">Время окончания:</dt>
+        <dd class="col-sm-9">{{ campaign.end_time|date:"d.m.Y H:i" }}</dd>
+
+        <dt class="col-sm-3">Создана:</dt>
+        <dd class="col-sm-9">{{ campaign.created_at|date:"d.m.Y H:i" }}</dd>
+      </dl>
+    </div>
+    <div class="card-footer bg-white">
+      <a href="{% url 'campaigns:campaign_update' campaign.pk %}" class="btn btn-primary">
+        Редактировать
+      </a>
+      <a href="{% url 'campaigns:campaign_delete' campaign.pk %}" class="btn btn-outline-danger">
+        Удалить
+      </a>
+      {% if campaign.can_be_sent %}
+        <button class="btn btn-success">
+          Запустить рассылку
+        </button>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

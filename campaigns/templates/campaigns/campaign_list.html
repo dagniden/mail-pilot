@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Рассылки - Mail Pilot{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Рассылки</h2>
+    <a href="{% url 'campaigns:campaign_create' %}" class="btn btn-purple">
+      + Создать рассылку
+    </a>
+  </div>
+
+  {% if campaigns %}
+    <div class="card shadow-sm">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Тема письма</th>
+                <th>Клиентов</th>
+                <th>Статус</th>
+                <th>Начало</th>
+                <th>Окончание</th>
+                <th class="text-end">Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for campaign in campaigns %}
+                <tr>
+                  <td>
+                    <a href="{% url 'campaigns:campaign_detail' campaign.pk %}" class="text-decoration-none">
+                      {{ campaign.message_template.subject }}
+                    </a>
+                  </td>
+                  <td>{{ campaign.clients.count }}</td>
+                  <td>
+                    {% if campaign.status == 'created' %}
+                      <span class="badge bg-secondary">Создана</span>
+                    {% elif campaign.status == 'in_progress' %}
+                      <span class="badge bg-success">В процессе</span>
+                    {% elif campaign.status == 'finished' %}
+                      <span class="badge bg-info">Завершена</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ campaign.start_time|date:"d.m.Y H:i" }}</td>
+                  <td>{{ campaign.end_time|date:"d.m.Y H:i" }}</td>
+                  <td class="text-end">
+                    <a href="{% url 'campaigns:campaign_update' campaign.pk %}"
+                       class="btn btn-sm btn-outline-primary">
+                      Редактировать
+                    </a>
+                    <a href="{% url 'campaigns:campaign_delete' campaign.pk %}"
+                       class="btn btn-sm btn-outline-danger">
+                      Удалить
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="alert alert-info">
+      У вас пока нет рассылок. <a href="{% url 'campaigns:campaign_create' %}">Создайте первую рассылку</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
