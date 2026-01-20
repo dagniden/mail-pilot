@@ -3,9 +3,7 @@ from django.utils import timezone
 
 
 class Client(models.Model):
-    email = models.EmailField(
-        unique=True, blank=False, verbose_name="Email", help_text="Введите email адрес"
-    )
+    email = models.EmailField(unique=True, blank=False, verbose_name="Email", help_text="Введите email адрес")
     full_name = models.CharField(
         max_length=255,
         verbose_name="Полное имя получателя",
@@ -19,9 +17,7 @@ class Client(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
-    comment = models.TextField(
-        blank=True, verbose_name="Комментарий", help_text="Введите комментарий"
-    )
+    comment = models.TextField(blank=True, verbose_name="Комментарий", help_text="Введите комментарий")
 
     class Meta:
         ordering = ["full_name"]
@@ -40,9 +36,7 @@ class MessageTemplate(models.Model):
         verbose_name="Тема письма",
         help_text="Введите тему письма",
     )
-    body = models.TextField(
-        blank=False, verbose_name="Тело письма", help_text="Введите тело письма"
-    )
+    body = models.TextField(blank=False, verbose_name="Тело письма", help_text="Введите тело письма")
     owner = models.ForeignKey(
         "users.CustomUser",
         on_delete=models.CASCADE,
@@ -139,11 +133,7 @@ class CampaignAttempt(models.Model):
         FAILED = "failed", "Не успешно"
 
     attempt_time = models.DateTimeField(auto_now_add=True, verbose_name="Время попытки")
-    server_response = models.TextField(
-        blank=True,
-        null=True,
-        verbose_name="Ответ сервера SMTP"
-    )
+    server_response = models.TextField(blank=True, null=True, verbose_name="Ответ сервера SMTP")
     campaign = models.ForeignKey(
         Campaign,
         on_delete=models.CASCADE,
@@ -168,24 +158,16 @@ class CampaignAttempt(models.Model):
         if not self.pk:
             # Получаем последнюю CampaignAttempt для текущего клиента
             last_attempt = (
-                CampaignAttempt.objects.filter(
-                    campaign=self.campaign, client=self.client
-                )
+                CampaignAttempt.objects.filter(campaign=self.campaign, client=self.client)
                 .order_by("-attempt_number")
                 .first()
             )
 
-            self.attempt_number = (
-                (last_attempt.attempt_number + 1) if last_attempt else 1
-            )
+            self.attempt_number = (last_attempt.attempt_number + 1) if last_attempt else 1
 
         super().save(*args, **kwargs)
 
     def __str__(self):
-        campaign_info = (
-            f"{self.campaign.message_template.subject}"
-            if self.campaign
-            else "Удаленная рассылка"
-        )
+        campaign_info = f"{self.campaign.message_template.subject}" if self.campaign else "Удаленная рассылка"
         client_info = f"{self.client.full_name}" if self.client else "Удаленный клиент"
         return f"Попытка рассылки #{self.id} {campaign_info}: {client_info}"

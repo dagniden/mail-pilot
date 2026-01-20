@@ -1,6 +1,6 @@
-from campaigns.models import Campaign, CampaignAttempt
 from django.core.mail import send_mail
 
+from campaigns.models import Campaign, CampaignAttempt
 from config import settings
 
 
@@ -25,20 +25,20 @@ class CampaignService:
                     message=campaign.message_template.body,
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[client.email],
-                    fail_silently=False
+                    fail_silently=False,
                 )
                 CampaignAttempt.objects.create(
                     campaign=campaign,
                     client=client,
                     status=CampaignAttempt.Status.SUCCESS,
-                    server_response='Email sent successfully'
+                    server_response="Email sent successfully",
                 )
             except Exception as e:
                 CampaignAttempt.objects.create(
                     campaign=campaign,
                     client=client,
                     status=CampaignAttempt.Status.FAILED,
-                    server_response=f'SMTP error: {str(e)}'
+                    server_response=f"SMTP error: {str(e)}",
                 )
 
         return True
