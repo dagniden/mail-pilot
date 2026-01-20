@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from campaigns.forms import ClientForm, MessageTemplateForm, CampaignForm
-from campaigns.models import Client, MessageTemplate, Campaign
+from campaigns.models import Client, MessageTemplate, Campaign, CampaignAttempt
 from campaigns.services import CampaignService
 
 
@@ -91,7 +91,6 @@ class CampaignDetailView(DetailView):
         return redirect('campaigns:campaign_detail', pk=campaign.pk)
 
 
-
 class CampaignCreateView(CreateView):
     model = Campaign
     form_class = CampaignForm
@@ -111,3 +110,21 @@ class CampaignUpdateView(UpdateView):
 class CampaignDeleteView(DeleteView):
     model = Campaign
     success_url = reverse_lazy('campaigns:campaign_list')
+
+
+class CampaignAttemptListView(ListView):
+    model = CampaignAttempt
+    context_object_name = "attempts"
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        campaign_id = self.request.GET.get('campaign_id')
+        if campaign_id:
+            queryset = queryset.filter(campaign_id=campaign_id)
+        return queryset.select_related('campaign', 'client').order_by('-attempt_time')
+
+
+class CampaignAttemptDetailView(DetailView):
+    model = CampaignAttempt
+    context_object_name = "attempt"
+
