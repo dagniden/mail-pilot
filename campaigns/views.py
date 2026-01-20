@@ -1,8 +1,9 @@
-from django.shortcuts import render, redirect
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
-from campaigns.forms import ClientForm, MessageTemplateForm, CampaignForm
-from campaigns.models import Client, MessageTemplate, Campaign
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+
+from campaigns.forms import CampaignForm, ClientForm, MessageTemplateForm
+from campaigns.models import Campaign, CampaignAttempt, Client, MessageTemplate
 from campaigns.services import CampaignService
 
 
@@ -19,7 +20,7 @@ class ClientDetailView(DetailView):
 class ClientCreateView(CreateView):
     model = Client
     form_class = ClientForm
-    success_url = reverse_lazy('campaigns:client_list')
+    success_url = reverse_lazy("campaigns:client_list")
 
     def form_valid(self, form):
         form.instance.owner = self.request.user
@@ -29,12 +30,12 @@ class ClientCreateView(CreateView):
 class ClientUpdateView(UpdateView):
     model = Client
     form_class = ClientForm
-    success_url = reverse_lazy('campaigns:client_list')
+    success_url = reverse_lazy("campaigns:client_list")
 
 
 class ClientDeleteView(DeleteView):
     model = Client
-    success_url = reverse_lazy('campaigns:client_list')
+    success_url = reverse_lazy("campaigns:client_list")
 
 
 class MessageTemplateListView(ListView):
@@ -50,7 +51,7 @@ class MessageTemplateDetailView(DetailView):
 class MessageTemplateCreateView(CreateView):
     model = MessageTemplate
     form_class = MessageTemplateForm
-    success_url = reverse_lazy('campaigns:message_templates_list')
+    success_url = reverse_lazy("campaigns:message_templates_list")
 
     def form_valid(self, form):
         form.instance.owner = self.request.user
@@ -60,13 +61,13 @@ class MessageTemplateCreateView(CreateView):
 class MessageTemplateUpdateView(UpdateView):
     model = MessageTemplate
     form_class = MessageTemplateForm
-    success_url = reverse_lazy('campaigns:message_templates_list')
+    success_url = reverse_lazy("campaigns:message_templates_list")
 
 
 class MessageTemplateDeleteView(DeleteView):
     model = MessageTemplate
     context_object_name = "message_template"
-    success_url = reverse_lazy('campaigns:message_templates_list')
+    success_url = reverse_lazy("campaigns:message_templates_list")
 
 
 # Campaign CRUD Views
@@ -88,14 +89,13 @@ class CampaignDetailView(DetailView):
         campaign = self.get_object()
         if "send_campaign" in request.POST:
             CampaignService.send_campaign(campaign)
-        return redirect('campaigns:campaign_detail', pk=campaign.pk)
-
+        return redirect("campaigns:campaign_detail", pk=campaign.pk)
 
 
 class CampaignCreateView(CreateView):
     model = Campaign
     form_class = CampaignForm
-    success_url = reverse_lazy('campaigns:campaign_list')
+    success_url = reverse_lazy("campaigns:campaign_list")
 
     def form_valid(self, form):
         form.instance.owner = self.request.user
@@ -105,9 +105,26 @@ class CampaignCreateView(CreateView):
 class CampaignUpdateView(UpdateView):
     model = Campaign
     form_class = CampaignForm
-    success_url = reverse_lazy('campaigns:campaign_list')
+    success_url = reverse_lazy("campaigns:campaign_list")
 
 
 class CampaignDeleteView(DeleteView):
     model = Campaign
-    success_url = reverse_lazy('campaigns:campaign_list')
+    success_url = reverse_lazy("campaigns:campaign_list")
+
+
+class CampaignAttemptListView(ListView):
+    model = CampaignAttempt
+    context_object_name = "attempts"
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        campaign_id = self.request.GET.get("campaign_id")
+        if campaign_id:
+            queryset = queryset.filter(campaign_id=campaign_id)
+        return queryset.select_related("campaign", "client").order_by("-attempt_time")
+
+
+class CampaignAttemptDetailView(DetailView):
+    model = CampaignAttempt
+    context_object_name = "attempt"

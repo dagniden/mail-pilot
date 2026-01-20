@@ -45,9 +45,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "created_at",
-                    models.DateTimeField(
-                        auto_now_add=True, verbose_name="Дата создания"
-                    ),
+                    models.DateTimeField(auto_now_add=True, verbose_name="Дата создания"),
                 ),
                 (
                     "updated_at",
@@ -100,15 +98,11 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "body",
-                    models.TextField(
-                        help_text="Введите тело письма", verbose_name="Тело письма"
-                    ),
+                    models.TextField(help_text="Введите тело письма", verbose_name="Тело письма"),
                 ),
                 (
                     "created_at",
-                    models.DateTimeField(
-                        auto_now_add=True, verbose_name="Дата создания"
-                    ),
+                    models.DateTimeField(auto_now_add=True, verbose_name="Дата создания"),
                 ),
                 (
                     "updated_at",
@@ -145,9 +139,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "created_at",
-                    models.DateTimeField(
-                        auto_now_add=True, verbose_name="Дата создания"
-                    ),
+                    models.DateTimeField(auto_now_add=True, verbose_name="Дата создания"),
                 ),
                 (
                     "status",

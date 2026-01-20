@@ -84,6 +84,12 @@
             </button>
           </form>
         {% endif %}
+        <div class="mt-3">
+          <a href="{% url 'campaigns:attempt_list' %}?campaign_id={{ campaign.pk }}"
+             class="btn btn-info">
+            Посмотреть логи отправки
+          </a>
+        </div>
       </div>
     </div>
   </div>
