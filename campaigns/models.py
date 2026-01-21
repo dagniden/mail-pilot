@@ -30,7 +30,7 @@ class Client(models.Model):
         return f"{self.full_name} <{self.email}>"
 
     def get_absolute_url(self):
-        return reverse('campaigns:client_detail', kwargs={'pk': self.pk})
+        return reverse("campaigns:client_detail", kwargs={"pk": self.pk})
 
 
 class MessageTemplate(models.Model):
@@ -62,7 +62,8 @@ class MessageTemplate(models.Model):
         return f"Шаблон письма #{self.id}: {self.subject}"
 
     def get_absolute_url(self):
-        return reverse('campaigns:message_template_detail', kwargs={'pk': self.pk})
+        return reverse("campaigns:message_template_detail", kwargs={"pk": self.pk})
+
 
 class Campaign(models.Model):
     class Status(models.TextChoices):
@@ -133,7 +134,8 @@ class Campaign(models.Model):
         return self.start_time <= current_time <= self.end_time
 
     def get_absolute_url(self):
-        return reverse('campaigns:campaign_detail', kwargs={'pk': self.pk})
+        return reverse("campaigns:campaign_detail", kwargs={"pk": self.pk})
+
 
 class CampaignAttempt(models.Model):
     class Status(models.TextChoices):
@@ -181,4 +183,4 @@ class CampaignAttempt(models.Model):
         return f"Попытка рассылки #{self.id} {campaign_info}: {client_info}"
 
     def get_absolute_url(self):
-        return reverse('campaigns:attempt_detail', kwargs={'pk': self.pk})
+        return reverse("campaigns:attempt_detail", kwargs={"pk": self.pk})
