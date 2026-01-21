@@ -27,7 +27,7 @@
         <dl class="row mb-0">
           <dt class="col-sm-3">Шаблон письма:</dt>
           <dd class="col-sm-9">
-            <a href="{% url 'campaigns:message_template_detail' campaign.message_template.pk %}">
+            <a href="{{ campaign.message_template.get_absolute_url }}">
               {{ campaign.message_template.subject }}
             </a>
           </dd>
