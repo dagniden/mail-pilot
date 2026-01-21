@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.urls import reverse
 
 
 class Client(models.Model):
@@ -27,6 +28,9 @@ class Client(models.Model):
 
     def __str__(self):
         return f"{self.full_name} <{self.email}>"
+
+    def get_absolute_url(self):
+        return reverse('campaigns:client_detail', kwargs={'pk': self.pk})
 
 
 class MessageTemplate(models.Model):
@@ -57,6 +61,8 @@ class MessageTemplate(models.Model):
     def __str__(self):
         return f"Шаблон письма #{self.id}: {self.subject}"
 
+    def get_absolute_url(self):
+        return reverse('campaigns:message_template_detail', kwargs={'pk': self.pk})
 
 class Campaign(models.Model):
     class Status(models.TextChoices):
@@ -126,6 +132,8 @@ class Campaign(models.Model):
         current_time = timezone.now()
         return self.start_time <= current_time <= self.end_time
 
+    def get_absolute_url(self):
+        return reverse('campaigns:campaign_detail', kwargs={'pk': self.pk})
 
 class CampaignAttempt(models.Model):
     class Status(models.TextChoices):
@@ -171,3 +179,6 @@ class CampaignAttempt(models.Model):
         campaign_info = f"{self.campaign.message_template.subject}" if self.campaign else "Удаленная рассылка"
         client_info = f"{self.client.full_name}" if self.client else "Удаленный клиент"
         return f"Попытка рассылки #{self.id} {campaign_info}: {client_info}"
+
+    def get_absolute_url(self):
+        return reverse('campaigns:attempt_detail', kwargs={'pk': self.pk})
