@@ -20,7 +20,7 @@
 
           <dt class="col-sm-3">Кампания:</dt>
           <dd class="col-sm-9">
-            <a href="{% url 'campaigns:campaign_detail' attempt.campaign.pk %}">
+            <a href="{{ attempt.campaign.get_absolute_url }}">
               {{ attempt.campaign.message_template.subject }}
             </a>
           </dd>
@@ -28,7 +28,7 @@
           <dt class="col-sm-3">Клиент:</dt>
           <dd class="col-sm-9">
             {% if attempt.client %}
-              <a href="{% url 'campaigns:client_detail' attempt.client.pk %}">
+              <a href="{{ attempt.client.get_absolute_url }}">
                 {{ attempt.client.email }}
               </a>
               ({{ attempt.client.full_name }})

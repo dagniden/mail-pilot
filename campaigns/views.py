@@ -20,7 +20,6 @@ class ClientDetailView(DetailView):
 class ClientCreateView(CreateView):
     model = Client
     form_class = ClientForm
-    success_url = reverse_lazy("campaigns:client_list")
 
     def form_valid(self, form):
         form.instance.owner = self.request.user
@@ -30,7 +29,6 @@ class ClientCreateView(CreateView):
 class ClientUpdateView(UpdateView):
     model = Client
     form_class = ClientForm
-    success_url = reverse_lazy("campaigns:client_list")
 
 
 class ClientDeleteView(DeleteView):
@@ -51,7 +49,6 @@ class MessageTemplateDetailView(DetailView):
 class MessageTemplateCreateView(CreateView):
     model = MessageTemplate
     form_class = MessageTemplateForm
-    success_url = reverse_lazy("campaigns:message_templates_list")
 
     def form_valid(self, form):
         form.instance.owner = self.request.user
@@ -61,7 +58,6 @@ class MessageTemplateCreateView(CreateView):
 class MessageTemplateUpdateView(UpdateView):
     model = MessageTemplate
     form_class = MessageTemplateForm
-    success_url = reverse_lazy("campaigns:message_templates_list")
 
 
 class MessageTemplateDeleteView(DeleteView):
@@ -95,7 +91,6 @@ class CampaignDetailView(DetailView):
 class CampaignCreateView(CreateView):
     model = Campaign
     form_class = CampaignForm
-    success_url = reverse_lazy("campaigns:campaign_list")
 
     def form_valid(self, form):
         form.instance.owner = self.request.user
@@ -105,7 +100,6 @@ class CampaignCreateView(CreateView):
 class CampaignUpdateView(UpdateView):
     model = Campaign
     form_class = CampaignForm
-    success_url = reverse_lazy("campaigns:campaign_list")
 
 
 class CampaignDeleteView(DeleteView):

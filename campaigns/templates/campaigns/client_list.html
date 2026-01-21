@@ -28,7 +28,7 @@
               {% for client in clients %}
                 <tr>
                   <td>
-                    <a href="{% url 'campaigns:client_detail' client.pk %}" class="text-decoration-none">
+                    <a href="{{ client.get_absolute_url }}" class="text-decoration-none">
                       {{ client.full_name }}
                     </a>
                   </td>

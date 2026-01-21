@@ -25,13 +25,13 @@
               <tr>
                 <td>{{ attempt.attempt_time|date:"d.m.Y H:i" }}</td>
                 <td>
-                  <a href="{% url 'campaigns:campaign_detail' attempt.campaign.pk %}">
+                  <a href="{{ attempt.campaign.get_absolute_url }}">
                     {{ attempt.campaign.message_template.subject|truncatewords:5 }}
                   </a>
                 </td>
                 <td>
                   {% if attempt.client %}
-                    <a href="{% url 'campaigns:client_detail' attempt.client.pk %}">
+                    <a href="{{ attempt.client.get_absolute_url }}">
                       {{ attempt.client.email }}
                     </a>
                   {% else %}
@@ -47,7 +47,7 @@
                   {% endif %}
                 </td>
                 <td>
-                  <a href="{% url 'campaigns:attempt_detail' attempt.pk %}"
+                  <a href="{{ attempt.get_absolute_url }}"
                      class="btn btn-sm btn-outline-primary">
                     Подробнее
                   </a>
