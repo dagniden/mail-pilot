@@ -40,7 +40,7 @@
             <ul class="list-unstyled mb-0">
               {% for client in campaign.clients.all %}
                 <li>
-                  <a href="{% url 'campaigns:client_detail' client.pk %}">
+                  <a href="{{ client.get_absolute_url }}">
                     {{ client.full_name }} ({{ client.email }})
                   </a>
                 </li>

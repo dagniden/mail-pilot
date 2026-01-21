@@ -22,7 +22,7 @@
             {% csrf_token %}
             <div class="d-flex gap-2">
               <button type="submit" class="btn btn-danger">Да, удалить</button>
-              <a href="{% url 'campaigns:message_template_detail' message_template.pk %}" class="btn btn-outline-secondary">
+              <a href="{{ message_template.get_absolute_url }}" class="btn btn-outline-secondary">
                 Отмена
               </a>
             </div>

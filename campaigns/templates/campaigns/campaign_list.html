@@ -30,7 +30,7 @@
               {% for campaign in campaigns %}
                 <tr>
                   <td>
-                    <a href="{% url 'campaigns:campaign_detail' campaign.pk %}" class="text-decoration-none">
+                    <a href="{{ campaign.get_absolute_url }}" class="text-decoration-none">
                       {{ campaign.message_template.subject }}
                     </a>
                   </td>
