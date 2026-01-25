@@ -39,13 +39,13 @@
       <div class="d-flex">
         {% if user.is_authenticated %}
           <a href="#" class="btn btn-link text-dark me-2">{{ user.email }}</a>
-          <form method="post" action="#" class="d-inline">
+          <form method="post" action="{% url "users:logout" %}" class="d-inline">
             {% csrf_token %}
             <button type="submit" class="btn btn-outline-secondary">Выйти</button>
           </form>
         {% else %}
-          <a href="#" class="btn btn-link text-dark me-2">Войти</a>
-          <a href="#" class="btn btn-purple">Зарегистрироваться</a>
+          <a href="{% url 'users:login' %}" class="btn btn-link text-dark me-2">Войти</a>
+          <a href="{% url 'users:register' %}" class="btn btn-purple">Зарегистрироваться</a>
         {% endif %}
       </div>
     </div>

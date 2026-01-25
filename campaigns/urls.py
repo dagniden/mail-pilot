@@ -1,24 +1,10 @@
 from django.urls import path
 
-from .views import (
-    CampaignAttemptDetailView,
-    CampaignAttemptListView,
-    CampaignCreateView,
-    CampaignDeleteView,
-    CampaignDetailView,
-    CampaignListView,
-    CampaignUpdateView,
-    ClientCreateView,
-    ClientDeleteView,
-    ClientDetailView,
-    ClientListView,
-    ClientUpdateView,
-    MessageTemplateCreateView,
-    MessageTemplateDeleteView,
-    MessageTemplateDetailView,
-    MessageTemplateListView,
-    MessageTemplateUpdateView,
-)
+from .views import (CampaignAttemptDetailView, CampaignAttemptListView, CampaignCreateView, CampaignDeleteView,
+                    CampaignDetailView, CampaignListView, CampaignUpdateView, ClientCreateView, ClientDeleteView,
+                    ClientDetailView, ClientListView, ClientUpdateView, MessageTemplateCreateView,
+                    MessageTemplateDeleteView, MessageTemplateDetailView, MessageTemplateListView,
+                    MessageTemplateUpdateView)
 
 app_name = "campaigns"
 

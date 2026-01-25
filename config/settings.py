@@ -140,3 +140,9 @@ if CACHE_ENABLED:
             "LOCATION": "redis://localhost:6379/1",
         }
     }
+
+
+# Registration and auth
+LOGIN_URL = "users:login"
+LOGIN_REDIRECT_URL = "home"
+LOGOUT_REDIRECT_URL = "home"
