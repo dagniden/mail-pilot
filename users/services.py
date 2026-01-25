@@ -17,9 +17,25 @@ class EmailVerificationService:
             reverse("users:verify_email", kwargs={"code": user.verification_code})
         )
 
+        email_body = f"""
+Добро пожаловать в Mail Pilot!
+
+Для завершения регистрации подтвердите ваш email-адрес, перейдя по ссылке:
+
+{verification_url}
+
+Ссылка действительна в течение 24 часов.
+
+Если вы не регистрировались на Mail Pilot, просто проигнорируйте это письмо.
+
+---
+С уважением,
+Команда Mail Pilot
+        """
+
         send_mail(
-            subject="MailPilot - подтвердите ваш email",
-            message=f"Перейдите по ссылке: {verification_url}\nСсылка действительна 24 часа.",
+            subject="Mail Pilot - подтвердите ваш email",
+            message=email_body.strip(),
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
         )

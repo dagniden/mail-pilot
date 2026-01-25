@@ -49,8 +49,8 @@ class VerifyEmailView(TemplateView):
             return redirect("users:login")
 
         if user.is_verification_expired():
-            messages.error(request, "Ссылка подтверждения истекла. Запросите новую.")
-            return redirect("users:resend_verification")
+            messages.error(request, "Ссылка подтверждения истекла (24 часа). Пожалуйста, зарегистрируйтесь заново.")
+            return redirect("users:register")
 
         user.is_email_verified = True
         user.is_active = True
