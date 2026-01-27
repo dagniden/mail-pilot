@@ -4,109 +4,181 @@
 
 {% block content %}
 
-<!-- Hero Section -->
-<section class="hero-section">
-  <div class="container">
-    <div class="row align-items-center">
-      <div class="col-lg-6">
-        <h1 class="hero-title">Создавайте рассылки<br>за считаные минуты</h1>
-        <p class="lead text-muted mb-4">
-          Сервис email-рассылок Mail Pilot.<br>
-          Отправляйте красивые письма, делитесь контентом<br>
-          и привлекайте больше платящих клиентов.
-        </p>
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-6">
+          <h1 class="hero-title">Создавайте рассылки<br>за считаные минуты</h1>
+          <p class="lead text-muted mb-4">
+            Сервис email-рассылок Mail Pilot.<br>
+            Отправляйте красивые письма, делитесь контентом<br>
+            и привлекайте больше платящих клиентов.
+          </p>
 
-        <a href="#" class="btn btn-purple btn-lg mb-4">Попробовать бесплатно</a>
 
-        <div class="d-flex gap-3">
-          <div class="d-flex align-items-center">
-            <span class="me-2">📧</span>
-            <span class="small">Email</span>
-          </div>
-          <div class="d-flex align-items-center">
-            <span class="me-2">💬</span>
-            <span class="small">Чат-боты</span>
-          </div>
-          <div class="d-flex align-items-center">
-            <span class="me-2">📱</span>
-            <span class="small">SMS</span>
+          <a href="#" class="btn btn-purple btn-lg mb-4">Попробовать бесплатно</a>
+
+          <div class="d-flex gap-3">
+            <div class="d-flex align-items-center">
+              <span class="me-2">📧</span>
+              <span class="small">Email</span>
+            </div>
+            <div class="d-flex align-items-center">
+              <span class="me-2">💬</span>
+              <span class="small">Чат-боты</span>
+            </div>
+            <div class="d-flex align-items-center">
+              <span class="me-2">📱</span>
+              <span class="small">SMS</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="col-lg-6 text-center d-none d-lg-block">
-        <div class="p-5">
-          <span style="font-size: 200px;">📬</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Steps Section -->
-<section class="py-5 bg-white">
-  <div class="container">
-    <h2 class="text-center mb-5">15 минут — и рассылка готова</h2>
-
-    <div class="row">
-      <!-- Step 1 -->
-      <div class="col-md-4 mb-4">
-        <div class="d-flex mb-3">
-          <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
-               style="width: 40px; height: 40px; min-width: 40px;">
-            <strong>1</strong>
-          </div>
-          <div class="ms-3">
-            <h5>Загрузите базу email-адресов</h5>
-            <p class="text-muted">
-              Импортируйте список клиентов или соберите email при помощи форм подписки.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 2 -->
-      <div class="col-md-4 mb-4">
-        <div class="d-flex mb-3">
-          <div class="rounded-circle text-white d-flex align-items-center justify-content-center"
-               style="width: 40px; height: 40px; min-width: 40px; background-color: #8b3a9c;">
-            <strong>2</strong>
-          </div>
-          <div class="ms-3">
-            <h5>Создайте красивое письмо</h5>
-            <p class="text-muted">
-              Используйте удобный конструктор писем, с нуля или из готовых шаблонов.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 3 -->
-      <div class="col-md-4 mb-4">
-        <div class="d-flex mb-3">
-          <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center"
-               style="width: 40px; height: 40px; min-width: 40px;">
-            <strong>3</strong>
-          </div>
-          <div class="ms-3">
-            <h5>Отправьте email и следите за результатами</h5>
-            <p class="text-muted">
-              Будьте в курсе, какие письма работают, и улучшайте ваши email-рассылки.
-            </p>
+        <div class="col-lg-6 text-center d-none d-lg-block">
+          <div class="p-5">
+            <span style="font-size: 200px;">📬</span>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- CTA Section -->
-<section class="py-5" style="background-color: var(--light-bg);">
-  <div class="container text-center">
-    <h2 class="mb-4">Готовы начать?</h2>
-    <p class="lead text-muted mb-4">Попробуйте Mail Pilot бесплатно</p>
-    <a href="#" class="btn btn-purple btn-lg">Зарегистрироваться</a>
-  </div>
-</section>
+  <!-- Statistics Section -->
+  {% if user.is_authenticated %}
+  <section class="py-5 bg-white">
+    <div class="container">
+      <h2 class="text-center mb-4">📊 Статистика</h2>
+
+      <div class="row g-4">
+        <!-- Total Campaigns Card -->
+        <div class="col-md-4">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <div class="mb-3" style="font-size: 3rem;">📧</div>
+              <h3 class="mb-1" style="color: #8b3a9c;">{{ campaigns_count }}</h3>
+              <p class="text-muted mb-3">Всего рассылок</p>
+              <a href="{% url 'campaigns:campaign_list' %}" class="btn btn-sm btn-outline-secondary">Посмотреть</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Campaigns Card -->
+        <div class="col-md-4">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <div class="mb-3" style="font-size: 3rem;">🚀</div>
+              <h3 class="mb-1" style="color: #28a745;">{{ active_campaigns_count }}</h3>
+              <p class="text-muted mb-3">Активных рассылок</p>
+              <a href="{% url 'campaigns:campaign_list' %}" class="btn btn-sm btn-outline-success">Посмотреть</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Total Clients Card -->
+        <div class="col-md-4">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <div class="mb-3" style="font-size: 3rem;">👥</div>
+              <h3 class="mb-1" style="color: #17a2b8;">{{ clients_count }}</h3>
+              <p class="text-muted mb-3">Уникальных клиентов</p>
+              <a href="{% url 'campaigns:client_list' %}" class="btn btn-sm btn-outline-info">Посмотреть</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Success Attempts Card -->
+        <div class="col-md-6">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <div class="mb-3" style="font-size: 3rem;">✅</div>
+              <h3 class="mb-1 text-success">{{ attempts_success_count }}</h3>
+              <p class="text-muted mb-3">Успешно отправлено</p>
+              <a href="{% url 'campaigns:attempt_list' %}" class="btn btn-sm btn-outline-success">Посмотреть логи</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Failed Attempts Card -->
+        <div class="col-md-6">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+              <div class="mb-3" style="font-size: 3rem;">❌</div>
+              <h3 class="mb-1 text-danger">{{ attempts_failed_count }}</h3>
+              <p class="text-muted mb-3">Ошибок доставки</p>
+              <a href="{% url 'campaigns:attempt_list' %}" class="btn btn-sm btn-outline-danger">Посмотреть логи</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Steps Section -->
+  <section class="py-5 bg-white">
+    <div class="container">
+      <h2 class="text-center mb-5">15 минут — и рассылка готова</h2>
+
+      <div class="row">
+        <!-- Step 1 -->
+        <div class="col-md-4 mb-4">
+          <div class="d-flex mb-3">
+            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                 style="width: 40px; height: 40px; min-width: 40px;">
+              <strong>1</strong>
+            </div>
+            <div class="ms-3">
+              <h5>Загрузите базу email-адресов</h5>
+              <p class="text-muted">
+                Импортируйте список клиентов или соберите email при помощи форм подписки.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="col-md-4 mb-4">
+          <div class="d-flex mb-3">
+            <div class="rounded-circle text-white d-flex align-items-center justify-content-center"
+                 style="width: 40px; height: 40px; min-width: 40px; background-color: #8b3a9c;">
+              <strong>2</strong>
+            </div>
+            <div class="ms-3">
+              <h5>Создайте красивое письмо</h5>
+              <p class="text-muted">
+                Используйте удобный конструктор писем, с нуля или из готовых шаблонов.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="col-md-4 mb-4">
+          <div class="d-flex mb-3">
+            <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center"
+                 style="width: 40px; height: 40px; min-width: 40px;">
+              <strong>3</strong>
+            </div>
+            <div class="ms-3">
+              <h5>Отправьте email и следите за результатами</h5>
+              <p class="text-muted">
+                Будьте в курсе, какие письма работают, и улучшайте ваши email-рассылки.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="py-5" style="background-color: var(--light-bg);">
+    <div class="container text-center">
+      <h2 class="mb-4">Готовы начать?</h2>
+      <p class="lead text-muted mb-4">Попробуйте Mail Pilot бесплатно</p>
+      <a href="#" class="btn btn-purple btn-lg">Зарегистрироваться</a>
+    </div>
+  </section>
 
 {% endblock %}
