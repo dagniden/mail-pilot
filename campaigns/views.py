@@ -1,11 +1,47 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
 
 from campaigns.forms import CampaignForm, ClientForm, MessageTemplateForm
 from campaigns.models import Campaign, CampaignAttempt, Client, MessageTemplate
 from campaigns.services import CampaignService
+
+
+# Home page view
+class IndexView(TemplateView):
+    template_name = "index.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Filter data by owner for regular users, show all for managers
+        if self.request.user.is_authenticated:
+            if self.request.user.has_perm("campaigns.can_view_all_campaigns"):
+                # Manager sees all data
+                campaigns = Campaign.objects.all()
+                clients = Client.objects.all()
+                attempts = CampaignAttempt.objects.all()
+            else:
+                # Regular user sees only their own data
+                campaigns = Campaign.objects.filter(owner=self.request.user)
+                clients = Client.objects.filter(owner=self.request.user)
+                # Attempts related to user's campaigns
+                attempts = CampaignAttempt.objects.filter(campaign__owner=self.request.user)
+        else:
+            # Anonymous users see zero stats
+            campaigns = Campaign.objects.none()
+            clients = Client.objects.none()
+            attempts = CampaignAttempt.objects.none()
+
+        context["campaigns_count"] = campaigns.count()
+        context["active_campaigns_count"] = campaigns.filter(status=Campaign.Status.IN_PROGRESS).count()
+        context["clients_count"] = clients.count()
+
+        context["attempts_success_count"] = attempts.filter(status=CampaignAttempt.Status.SUCCESS).count()
+        context["attempts_failed_count"] = attempts.filter(status=CampaignAttempt.Status.FAILED).count()
+
+        return context
 
 
 # Client CRUD views

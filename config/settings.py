@@ -2,6 +2,7 @@ from pathlib import Path
 
 from decouple import config
 from django.conf.global_settings import MEDIA_URL
+from django.contrib.messages import constants as messages
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -124,7 +125,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "users.CustomUser"
 
 # Messages framework - map to Bootstrap 5 alert classes
-from django.contrib.messages import constants as messages
+
 
 MESSAGE_TAGS = {
     messages.DEBUG: "secondary",
@@ -141,7 +142,7 @@ EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
 EMAIL_PORT = config("EMAIL_PORT")
 EMAIL_USE_TLS = config("EMAIL_USE_TLS")
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL")
-EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+EMAIL_BACKEND = config("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
 
 CACHE_ENABLED = config("CACHE_ENABLED")
 if CACHE_ENABLED:
