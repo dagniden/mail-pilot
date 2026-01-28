@@ -475,10 +475,12 @@ mail-pilot/
 | `first_name` | CharField | max_length=150 | Имя |
 | `last_name` | CharField | max_length=150 | Фамилия |
 | `avatar` | ImageField | upload_to='avatars/', blank=True, null=True | Фото профиля |
-| `phone_number` | CharField | max_length=20, blank=True, null=True | Телефон |
+| `phone_number` | CharField | max_length=15, blank=True, null=True | Телефон |
 | `country` | CharField | max_length=100, blank=True, null=True | Страна |
-| `verification_code` | CharField | max_length=6, blank=True, null=True | Код подтверждения email |
-| `is_active` | BooleanField | default=False | Активен ли аккаунт |
+| `verification_code` | UUIDField | default=uuid.uuid4, editable=False | UUID код подтверждения email |
+| `is_email_verified` | BooleanField | default=False | Подтвержден ли email |
+| `verification_sent_at` | DateTimeField | null=True, blank=True | Время отправки кода верификации |
+| `is_active` | BooleanField | default=True | Активен ли аккаунт (устанавливается в True после верификации email) |
 | `is_staff` | BooleanField | default=False | Доступ к админке (AbstractUser) |
 | `date_joined` | DateTimeField | auto_now_add=True | Дата регистрации |
 
@@ -488,13 +490,17 @@ mail-pilot/
 def __str__(self):
     return self.email
 
-def generate_verification_code(self):
-    """Генерирует 6-значный код подтверждения"""
-    pass
+def regenerate_verification_code(self):
+    """Генерирует новый UUID и обновляет время отправки"""
+    self.verification_code = uuid.uuid4()
+    self.verification_sent_at = timezone.now()
+    self.save(update_fields=["verification_code", "verification_sent_at"])
 
-def send_verification_email(self):
-    """Отправляет код подтверждения на email"""
-    pass
+def is_verification_expired(self):
+    """Проверяет, истек ли срок действия кода (24 часа)"""
+    if not self.verification_sent_at:
+        return True
+    return timezone.now() > self.verification_sent_at + timedelta(days=1)
 ```
 
 **Meta:**
@@ -1148,42 +1154,23 @@ class Meta:
 
 ```python
 from django.urls import path
-from django.contrib.auth import views as auth_views
 from .views import (
-    RegisterView, VerifyEmailView, ProfileView,
-    UserListView, UserDetailView, ToggleUserActiveView
+    UserRegisterView,
+    UserLoginView,
+    UserLogoutView,
+    VerifyEmailView,
+    RegistrationCompleteView
 )
 
 app_name = 'users'
 
 urlpatterns = [
     # Аутентификация
-    path('register/', RegisterView.as_view(), name='register'),
-    path('verify/', VerifyEmailView.as_view(), name='verify'),
-    path('login/', auth_views.LoginView.as_view(), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
-
-    # Восстановление пароля
-    path('password-reset/',
-         auth_views.PasswordResetView.as_view(),
-         name='password_reset'),
-    path('password-reset/done/',
-         auth_views.PasswordResetDoneView.as_view(),
-         name='password_reset_done'),
-    path('reset/<uidb64>/<token>/',
-         auth_views.PasswordResetConfirmView.as_view(),
-         name='password_reset_confirm'),
-    path('reset/done/',
-         auth_views.PasswordResetCompleteView.as_view(),
-         name='password_reset_complete'),
-
-    # Профиль
-    path('profile/', ProfileView.as_view(), name='profile'),
-
-    # Управление пользователями (для менеджеров)
-    path('', UserListView.as_view(), name='user_list'),
-    path('<int:pk>/', UserDetailView.as_view(), name='user_detail'),
-    path('<int:pk>/toggle-active/', ToggleUserActiveView.as_view(), name='toggle_active'),
+    path('register/', UserRegisterView.as_view(), name='register'),
+    path('verify-email/<uuid:code>/', VerifyEmailView.as_view(), name='verify_email'),
+    path('login/', UserLoginView.as_view(), name='login'),
+    path('logout/', UserLogoutView.as_view(), name='logout'),
+    path('registration-complete/', RegistrationCompleteView.as_view(), name='registration_complete'),
 ]
 ```
 
@@ -1191,12 +1178,18 @@ urlpatterns = [
 
 | View | Тип | Шаблон | Доступ | Описание |
 |------|-----|--------|--------|----------|
-| `RegisterView` | CreateView | users/register.html | Публичный | Регистрация |
-| `VerifyEmailView` | FormView | users/verify.html | Публичный | Подтверждение email |
-| `ProfileView` | UpdateView | users/profile.html | @login_required | Редактирование профиля |
-| `UserListView` | ListView | users/user_list.html | @permission_required | Список пользователей |
-| `UserDetailView` | DetailView | users/user_detail.html | @permission_required | Детали пользователя |
-| `ToggleUserActiveView` | View | - | @permission_required | Блокировка/разблокировка |
+| `UserRegisterView` | CreateView | users/register.html | Публичный | Регистрация с отправкой email верификации |
+| `VerifyEmailView` | TemplateView | users/verify_email.html | Публичный | Подтверждение email по UUID коду |
+| `UserLoginView` | LoginView | registration/login.html | Публичный | Вход в систему |
+| `UserLogoutView` | LogoutView | - | @login_required | Выход из системы |
+| `RegistrationCompleteView` | TemplateView | users/registration_complete.html | Публичный | Страница после успешной регистрации |
+
+**Не реализовано (TODO):**
+- `ProfileView` - редактирование профиля
+- `UserListView` - список пользователей (для менеджеров)
+- `UserDetailView` - детали пользователя (для менеджеров)
+- `ToggleUserActiveView` - блокировка/разблокировка (для менеджеров)
+- Восстановление пароля (Django built-in views)
 
 ---
 
@@ -1207,40 +1200,46 @@ urlpatterns = [
 ```python
 from django.urls import path
 from .views import (
-    # Получатели
-    ClientListView, ClientCreateView,
+    # Клиенты
+    ClientListView, ClientCreateView, ClientDetailView,
     ClientUpdateView, ClientDeleteView,
-    # Сообщения
-    MessageTemplateListView, MessageTemplateCreateView,
+    # Шаблоны сообщений
+    MessageTemplateListView, MessageTemplateCreateView, MessageTemplateDetailView,
     MessageTemplateUpdateView, MessageTemplateDeleteView,
-    # Рассылки
-    CampaignListView, CampaignCreateView,
-    CampaignDetailView, CampaignUpdateView, CampaignDeleteView,
-    SendCampaignView,
+    # Кампании
+    CampaignListView, CampaignCreateView, CampaignDetailView,
+    CampaignUpdateView, CampaignDeleteView,
+    # Попытки отправки
+    CampaignAttemptListView, CampaignAttemptDetailView,
 )
 
 app_name = 'campaigns'
 
 urlpatterns = [
-    # Получатели
+    # Клиенты
     path('clients/', ClientListView.as_view(), name='client_list'),
     path('clients/create/', ClientCreateView.as_view(), name='client_create'),
-    path('clients/<int:pk>/edit/', ClientUpdateView.as_view(), name='client_update'),
+    path('clients/<int:pk>/', ClientDetailView.as_view(), name='client_detail'),
+    path('clients/<int:pk>/update/', ClientUpdateView.as_view(), name='client_update'),
     path('clients/<int:pk>/delete/', ClientDeleteView.as_view(), name='client_delete'),
 
-    # Сообщения
-    path('message_templates/', MessageTemplateListView.as_view(), name='message_template_list'),
+    # Шаблоны сообщений
+    path('message_templates/', MessageTemplateListView.as_view(), name='message_templates_list'),
     path('message_templates/create/', MessageTemplateCreateView.as_view(), name='message_template_create'),
-    path('message_templates/<int:pk>/edit/', MessageTemplateUpdateView.as_view(), name='message_template_update'),
+    path('message_templates/<int:pk>/', MessageTemplateDetailView.as_view(), name='message_template_detail'),
+    path('message_templates/<int:pk>/update/', MessageTemplateUpdateView.as_view(), name='message_template_update'),
     path('message_templates/<int:pk>/delete/', MessageTemplateDeleteView.as_view(), name='message_template_delete'),
 
-    # Рассылки
-    path('', CampaignListView.as_view(), name='campaign_list'),
-    path('create/', CampaignCreateView.as_view(), name='campaign_create'),
-    path('<int:pk>/', CampaignDetailView.as_view(), name='campaign_detail'),
-    path('<int:pk>/edit/', CampaignUpdateView.as_view(), name='campaign_update'),
-    path('<int:pk>/delete/', CampaignDeleteView.as_view(), name='campaign_delete'),
-    path('<int:pk>/send/', SendCampaignView.as_view(), name='campaign_send'),
+    # Кампании
+    path('campaigns/', CampaignListView.as_view(), name='campaign_list'),
+    path('campaigns/create/', CampaignCreateView.as_view(), name='campaign_create'),
+    path('campaigns/<int:pk>/', CampaignDetailView.as_view(), name='campaign_detail'),
+    path('campaigns/<int:pk>/update/', CampaignUpdateView.as_view(), name='campaign_update'),
+    path('campaigns/<int:pk>/delete/', CampaignDeleteView.as_view(), name='campaign_delete'),
+
+    # Попытки отправки
+    path('attempts/', CampaignAttemptListView.as_view(), name='attempt_list'),
+    path('attempts/<int:pk>/', CampaignAttemptDetailView.as_view(), name='attempt_detail'),
 ]
 ```
 
@@ -1248,20 +1247,24 @@ urlpatterns = [
 
 | View | Тип | Миксины | Описание |
 |------|-----|---------|----------|
+| `IndexView` | TemplateView | - | Главная страница со статистикой (фильтрация по owner/менеджер) |
 | `ClientListView` | ListView | LoginRequiredMixin | Фильтрует по owner |
+| `ClientDetailView` | DetailView | LoginRequiredMixin, UserPassesTestMixin | Детали клиента |
 | `ClientCreateView` | CreateView | LoginRequiredMixin | Устанавливает owner=request.user в form_valid() |
 | `ClientUpdateView` | UpdateView | LoginRequiredMixin, UserPassesTestMixin | Проверка owner |
 | `ClientDeleteView` | DeleteView | LoginRequiredMixin, UserPassesTestMixin | Проверка owner |
 | `MessageTemplateListView` | ListView | LoginRequiredMixin | Фильтрует по owner |
+| `MessageTemplateDetailView` | DetailView | LoginRequiredMixin, UserPassesTestMixin | Детали шаблона |
 | `MessageTemplateCreateView` | CreateView | LoginRequiredMixin | Устанавливает owner |
 | `MessageTemplateUpdateView` | UpdateView | LoginRequiredMixin, UserPassesTestMixin | Проверка owner |
 | `MessageTemplateDeleteView` | DeleteView | LoginRequiredMixin, UserPassesTestMixin | Проверка owner |
 | `CampaignListView` | ListView | LoginRequiredMixin | Фильтрует по owner (или все для менеджеров) |
 | `CampaignCreateView` | CreateView | LoginRequiredMixin | Устанавливает owner |
-| `CampaignDetailView` | DetailView | LoginRequiredMixin | Вызывает update_status() |
+| `CampaignDetailView` | DetailView | LoginRequiredMixin, UserPassesTestMixin | Вызывает update_status(), POST для отправки |
 | `CampaignUpdateView` | UpdateView | LoginRequiredMixin, UserPassesTestMixin | Проверка owner |
 | `CampaignDeleteView` | DeleteView | LoginRequiredMixin, UserPassesTestMixin | Проверка owner |
-| `SendCampaignView` | View | LoginRequiredMixin, UserPassesTestMixin | Запускает отправку |
+| `CampaignAttemptListView` | ListView | LoginRequiredMixin | Фильтрация по campaign_id (GET параметр) |
+| `CampaignAttemptDetailView` | DetailView | LoginRequiredMixin | Детали попытки отправки |
 
 ---
 
@@ -1434,34 +1437,30 @@ python manage.py create_groups
 
 ```python
 from django.core.management.base import BaseCommand
-from django.utils import timezone
 from campaigns.models import Campaign
-from campaigns.services import send_campaign
+from campaigns.services import CampaignService
 
 class Command(BaseCommand):
-    help = 'Отправка рассылок, готовых к отправке'
+    help = 'Отправляет все активные кампании в пределах временного окна'
 
     def handle(self, *args, **options):
-        now = timezone.now()
-        campaigns = Campaign.objects.filter(
-            start_time__lte=now,
-            end_time__gte=now,
-        ).exclude(status='finished')
-
-        self.stdout.write(f'Найдено рассылок: {campaigns.count()}')
+        campaigns = Campaign.objects.all()
+        statistics = {
+            'sent': 0,
+            'skipped': 0
+        }
 
         for campaign in campaigns:
-            try:
-                result = send_campaign(campaign)
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f'Рассылка #{campaign.id}: отправлено {result["success"]}/{result["total"]}'
-                    )
-                )
-            except Exception as e:
-                self.stdout.write(
-                    self.style.ERROR(f'Ошибка в рассылке #{campaign.id}: {e}')
-                )
+            if not campaign.can_be_sent():
+                continue
+
+            result = CampaignService.send_campaign(campaign)
+            statistics['sent' if result else 'skipped'] += 1
+
+        self.stdout.write(self.style.SUCCESS("Command finished"))
+        self.stdout.write(self.style.SUCCESS(
+            f"Sent {statistics['sent']} campaigns, skipped {statistics['skipped']} campaigns"
+        ))
 ```
 
 **Запуск:**
