@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.urls import reverse
 from django.utils import timezone
 
 
@@ -33,3 +34,6 @@ class CustomUser(AbstractUser):
         if not self.verification_sent_at:
             return True
         return timezone.now() > self.verification_sent_at + timedelta(days=1)
+
+    def get_absolute_url(self):
+        return reverse("users:user_detail", kwargs={"pk": self.pk})
