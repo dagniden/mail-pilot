@@ -1,8 +1,9 @@
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, TemplateView
+from django.views.generic import CreateView, DetailView, ListView, TemplateView
 
 from .forms import CustomUserCreationForm
 from .models import CustomUser
@@ -31,6 +32,43 @@ class UserLogoutView(LogoutView):
 
 class UserLoginView(LoginView):
     template_name = "users/login.html"
+
+
+class UserListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+    model = CustomUser
+    permission_required = ["campaigns.can_view_all_recipients"]
+
+
+class UserDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+    model = CustomUser
+    permission_required = ["campaigns.can_view_all_recipients"]
+    context_object_name = "user_detail"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user_obj = self.get_object()
+
+        context["total_clients"] = user_obj.clients.count()
+        context["total_campaigns"] = user_obj.campaigns.count()
+        context["total_templates"] = user_obj.templates.count()
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        user_obj = self.get_object()
+
+        if user_obj == request.user:
+            messages.error(request, "Нельзя заблокировать самого себя")
+            return redirect(user_obj.get_absolute_url())
+
+        if "toggle_active" in request.POST:
+            user_obj.is_active = not user_obj.is_active
+            user_obj.save()
+            if user_obj.is_active:
+                messages.success(request, f"Пользователь {user_obj.email} разблокирован")
+            else:
+                messages.warning(request, f"Пользователь {user_obj.email} заблокирован")
+        return redirect(user_obj.get_absolute_url())
 
 
 class RegistrationCompleteView(TemplateView):

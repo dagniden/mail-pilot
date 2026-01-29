@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}{{ user_detail.email }} - Mail Pilot{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="mb-4">
+    <a href="{% url 'users:users' %}" class="text-decoration-none">
+      ← Назад к списку
+    </a>
+  </div>
+
+  <div class="row">
+    <!-- Левая колонка: Информация о пользователе -->
+    <div class="col-md-8">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white py-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">{{ user_detail.email }}</h3>
+            {% if user_detail.is_active %}
+              <span class="badge bg-success fs-6">Активен</span>
+            {% else %}
+              <span class="badge bg-danger fs-6">Заблокирован</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-4">Email:</dt>
+            <dd class="col-sm-8">{{ user_detail.email }}</dd>
+
+            <dt class="col-sm-4">Имя пользователя:</dt>
+            <dd class="col-sm-8">{{ user_detail.username }}</dd>
+
+            <dt class="col-sm-4">ФИО:</dt>
+            <dd class="col-sm-8">{{ user_detail.get_full_name|default:"—" }}</dd>
+
+            <dt class="col-sm-4">Телефон:</dt>
+            <dd class="col-sm-8">{{ user_detail.phone_number|default:"—" }}</dd>
+
+            <dt class="col-sm-4">Страна:</dt>
+            <dd class="col-sm-8">{{ user_detail.country|default:"—" }}</dd>
+
+            <dt class="col-sm-4">Дата регистрации:</dt>
+            <dd class="col-sm-8">{{ user_detail.date_joined|date:"d.m.Y H:i" }}</dd>
+
+            <dt class="col-sm-4">Email подтверждён:</dt>
+            <dd class="col-sm-8">
+              {% if user_detail.is_email_verified %}
+                <span class="badge bg-success">Да</span>
+              {% else %}
+                <span class="badge bg-warning">Нет</span>
+              {% endif %}
+            </dd>
+
+            <dt class="col-sm-4">Последний вход:</dt>
+            <dd class="col-sm-8">
+              {% if user_detail.last_login %}
+                {{ user_detail.last_login|date:"d.m.Y H:i" }}
+              {% else %}
+                <span class="text-muted">Никогда</span>
+              {% endif %}
+            </dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <!-- Правая колонка: Статистика и действия -->
+    <div class="col-md-4">
+      <!-- Статистика -->
+      <div class="card shadow-sm mb-3">
+        <div class="card-header bg-white py-3">
+          <h5 class="mb-0">Статистика</h5>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <strong>Клиентов:</strong>
+            <span class="badge bg-primary">{{ total_clients|default:0 }}</span>
+          </div>
+          <div class="mb-3">
+            <strong>Кампаний:</strong>
+            <span class="badge bg-success">{{ total_campaigns|default:0 }}</span>
+          </div>
+          <div class="mb-0">
+            <strong>Шаблонов:</strong>
+            <span class="badge bg-info">{{ total_templates|default:0 }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Действия -->
+      {% if user_detail != request.user %}
+        <div class="card shadow-sm">
+          <div class="card-header bg-white py-3">
+            <h5 class="mb-0">Действия</h5>
+          </div>
+          <div class="card-body">
+            <form method="post">
+              {% csrf_token %}
+              {% if user_detail.is_active %}
+                <button type="submit" name="toggle_active" class="btn btn-danger w-100">
+                  🔒 Заблокировать пользователя
+                </button>
+                <small class="text-muted d-block mt-2">
+                  Пользователь не сможет войти в систему
+                </small>
+              {% else %}
+                <button type="submit" name="toggle_active" class="btn btn-success w-100">
+                  🔓 Разблокировать пользователя
+                </button>
+                <small class="text-muted d-block mt-2">
+                  Пользователь сможет войти в систему
+                </small>
+              {% endif %}
+            </form>
+          </div>
+        </div>
+      {% else %}
+        <div class="card shadow-sm">
+          <div class="card-header bg-white py-3">
+            <h5 class="mb-0">Действия</h5>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-0">
+              Вы не можете заблокировать самого себя
+            </p>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -28,6 +28,11 @@
           <li class="nav-item">
             <a class="nav-link" href="{% url 'campaigns:campaign_list' %}">Рассылки</a>
           </li>
+          {% if perms.campaigns.can_view_all_campaigns %}
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'users:users' %}">👥 Пользователи</a>
+            </li>
+          {% endif %}
         {% endif %}
 
         <li class="nav-item">
