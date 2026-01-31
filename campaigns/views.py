@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.cache import cache
 from django.shortcuts import redirect
@@ -183,8 +184,29 @@ class CampaignDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
 
     def post(self, request, *args, **kwargs):
         campaign = self.get_object()
+
+        # Отправка рассылки (только владелец)
         if "send_campaign" in request.POST:
             CampaignService.send_campaign(campaign)
+
+        # Переключение активности (только менеджеры)
+        if "toggle_active" in request.POST:
+            if request.user.has_perm("campaigns.can_disable_campaign"):
+                campaign.is_active = not campaign.is_active
+                campaign.save(update_fields=["is_active"])
+
+                if campaign.is_active:
+                    messages.success(request, f"Рассылка '{campaign}' активирована")
+                else:
+                    messages.warning(request, f"Рассылка '{campaign}' отключена")
+
+                # Инвалидация кеша
+                if CACHE_ENABLED:
+                    cache.delete(f"campaigns_by_user_{campaign.owner.id}")
+                    cache.delete(f"index_stats_user_{campaign.owner.id}")
+            else:
+                messages.error(request, "У вас нет прав для отключения рассылок")
+
         return redirect("campaigns:campaign_detail", pk=campaign.pk)
 
     def test_func(self):
