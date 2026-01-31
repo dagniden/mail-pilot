@@ -101,11 +101,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
 LANGUAGE_CODE = "en-us"
-
 TIME_ZONE = "UTC"
-
 USE_I18N = True
-
 USE_TZ = True
 
 
@@ -124,9 +121,8 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "users.CustomUser"
 
+
 # Messages framework - map to Bootstrap 5 alert classes
-
-
 MESSAGE_TAGS = {
     messages.DEBUG: "secondary",
     messages.INFO: "info",
@@ -144,7 +140,7 @@ EMAIL_USE_TLS = config("EMAIL_USE_TLS")
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL")
 EMAIL_BACKEND = config("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
 
-CACHE_ENABLED = config("CACHE_ENABLED")
+CACHE_ENABLED = config("CACHE_ENABLED", cast=bool, default=False)
 if CACHE_ENABLED:
     CACHES = {
         "default": {

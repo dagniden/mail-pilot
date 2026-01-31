@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.cache import cache
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
@@ -6,6 +7,7 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, T
 from campaigns.forms import CampaignForm, ClientForm, MessageTemplateForm
 from campaigns.models import Campaign, CampaignAttempt, Client, MessageTemplate
 from campaigns.services import CampaignService
+from config.settings import CACHE_ENABLED
 
 
 # Home page view
@@ -15,32 +17,48 @@ class IndexView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Filter data by owner for regular users, show all for managers
-        if self.request.user.is_authenticated:
-            if self.request.user.has_perm("campaigns.can_view_all_campaigns"):
-                # Manager sees all data
-                campaigns = Campaign.objects.all()
-                clients = Client.objects.all()
-                attempts = CampaignAttempt.objects.all()
-            else:
-                # Regular user sees only their own data
-                campaigns = Campaign.objects.filter(owner=self.request.user)
-                clients = Client.objects.filter(owner=self.request.user)
-                # Attempts related to user's campaigns
-                attempts = CampaignAttempt.objects.filter(campaign__owner=self.request.user)
-        else:
+        if not CACHE_ENABLED or not self.request.user.is_authenticated:
             # Anonymous users see zero stats
-            campaigns = Campaign.objects.none()
-            clients = Client.objects.none()
-            attempts = CampaignAttempt.objects.none()
+            context.update(
+                {
+                    "campaigns_count": 0,
+                    "active_campaigns_count": 0,
+                    "clients_count": 0,
+                    "attempts_success_count": 0,
+                    "attempts_failed_count": 0,
+                }
+            )
+            return context
 
-        context["campaigns_count"] = campaigns.count()
-        context["active_campaigns_count"] = campaigns.filter(status=Campaign.Status.IN_PROGRESS).count()
-        context["clients_count"] = clients.count()
+        cache_key = f"index_stats_user_{self.request.user.id}"
+        cache_data = cache.get(cache_key)
 
-        context["attempts_success_count"] = attempts.filter(status=CampaignAttempt.Status.SUCCESS).count()
-        context["attempts_failed_count"] = attempts.filter(status=CampaignAttempt.Status.FAILED).count()
+        if cache_data:
+            context.update(cache_data)
+            return context
 
+        if self.request.user.has_perm("campaigns.can_view_all_campaigns"):
+            # Manager sees all data
+            campaigns = Campaign.objects.all()
+            clients = Client.objects.all()
+            attempts = CampaignAttempt.objects.all()
+        else:
+            # Regular user sees only their own data
+            campaigns = Campaign.objects.filter(owner=self.request.user)
+            clients = Client.objects.filter(owner=self.request.user)
+            # Attempts related to user's campaigns
+            attempts = CampaignAttempt.objects.filter(campaign__owner=self.request.user)
+
+        data = {
+            "campaigns_count": campaigns.count(),
+            "active_campaigns_count": campaigns.filter(status=Campaign.Status.IN_PROGRESS).count(),
+            "clients_count": clients.count(),
+            "attempts_success_count": attempts.filter(status=CampaignAttempt.Status.SUCCESS).count(),
+            "attempts_failed_count": attempts.filter(status=CampaignAttempt.Status.FAILED).count(),
+        }
+
+        cache.set(cache_key, data, 60 * 5)
+        context.update(data)
         return context
 
 
@@ -135,7 +153,23 @@ class CampaignListView(LoginRequiredMixin, ListView):
     context_object_name = "campaigns"
 
     def get_queryset(self):
-        return Campaign.objects.filter(owner=self.request.user)
+
+        if self.request.user.has_perm("campaigns.can_view_all_campaigns"):
+            return Campaign.objects.all()
+
+        if not CACHE_ENABLED:
+            return Campaign.objects.filter(owner=self.request.user)
+
+        cache_key = f"campaigns_by_user_{self.request.user.id}"
+        cached_campaigns = cache.get(cache_key)
+
+        if cached_campaigns is not None:
+            return cached_campaigns
+
+        campaigns_list = list(Campaign.objects.filter(owner=self.request.user))
+        cache.set(cache_key, campaigns_list, 60 * 5)
+
+        return campaigns_list
 
 
 class CampaignDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
@@ -162,6 +196,9 @@ class CampaignCreateView(LoginRequiredMixin, CreateView):
     form_class = CampaignForm
 
     def form_valid(self, form):
+        if CACHE_ENABLED:
+            cache.delete(f"campaigns_by_user_{self.request.user.id}")
+            cache.delete(f"index_stats_user_{self.request.user.id}")
         form.instance.owner = self.request.user
         return super().form_valid(form)
 
@@ -173,6 +210,12 @@ class CampaignUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def test_func(self):
         return self.get_object().owner == self.request.user
 
+    def form_valid(self, form):
+        if CACHE_ENABLED:
+            cache.delete(f"campaigns_by_user_{self.request.user.id}")
+            cache.delete(f"index_stats_user_{self.request.user.id}")
+        return super().form_valid(form)
+
 
 class CampaignDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Campaign
@@ -180,6 +223,12 @@ class CampaignDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def test_func(self):
         return self.get_object().owner == self.request.user
+
+    def delete(self, request, *args, **kwargs):
+        if CACHE_ENABLED:
+            cache.delete(f"campaigns_by_user_{self.request.user.id}")
+            cache.delete(f"index_stats_user_{self.request.user.id}")
+        return super().delete(request, *args, **kwargs)
 
 
 # CampaignAttempt read only views
