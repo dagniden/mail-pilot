@@ -14,13 +14,20 @@
       <div class="card-header bg-white py-3">
         <div class="d-flex justify-content-between align-items-center">
           <h3 class="mb-0">{{ campaign.message_template.subject }}</h3>
-          {% if campaign.status == 'created' %}
-            <span class="badge bg-secondary fs-6">Создана</span>
-          {% elif campaign.status == 'in_progress' %}
-            <span class="badge bg-success fs-6">В процессе</span>
-          {% elif campaign.status == 'finished' %}
-            <span class="badge bg-info fs-6">Завершена</span>
-          {% endif %}
+          <div>
+            {% if campaign.status == 'created' %}
+              <span class="badge bg-secondary fs-6">Создана</span>
+            {% elif campaign.status == 'in_progress' %}
+              <span class="badge bg-success fs-6">В процессе</span>
+            {% elif campaign.status == 'finished' %}
+              <span class="badge bg-info fs-6">Завершена</span>
+            {% endif %}
+            {% if campaign.is_active %}
+              <span class="badge bg-success fs-6">Активна</span>
+            {% else %}
+              <span class="badge bg-secondary fs-6">Отключена</span>
+            {% endif %}
+          </div>
         </div>
       </div>
       <div class="card-body">
@@ -70,13 +77,24 @@
         </dl>
       </div>
       <div class="card-footer bg-white">
-        <a href="{% url 'campaigns:campaign_update' campaign.pk %}" class="btn btn-primary">
-          Редактировать
-        </a>
-        <a href="{% url 'campaigns:campaign_delete' campaign.pk %}" class="btn btn-outline-danger">
-          Удалить
-        </a>
-        {% if campaign.can_be_sent %}
+        {% if not campaign.is_active %}
+          <div class="alert alert-warning mb-3">
+            <strong>Внимание!</strong> Эта рассылка отключена и не может быть отправлена.
+          </div>
+        {% endif %}
+
+        {# Кнопки редактирования/удаления - только для владельца #}
+        {% if campaign.owner == request.user %}
+          <a href="{% url 'campaigns:campaign_update' campaign.pk %}" class="btn btn-primary">
+            Редактировать
+          </a>
+          <a href="{% url 'campaigns:campaign_delete' campaign.pk %}" class="btn btn-outline-danger">
+            Удалить
+          </a>
+        {% endif %}
+
+        {# Кнопка запуска - только для владельца если активна #}
+        {% if campaign.can_be_sent and campaign.owner == request.user %}
           <form method="post" style="display: inline;">
             {% csrf_token %}
             <button type="submit" name="send_campaign" class="btn btn-success">
@@ -84,6 +102,24 @@
             </button>
           </form>
         {% endif %}
+
+        {# Кнопка переключения активности - только для менеджеров #}
+        {% if perms.campaigns.can_disable_campaign %}
+          <form method="post" style="display: inline;">
+            {% csrf_token %}
+            {% if campaign.is_active %}
+              <button type="submit" name="toggle_active" class="btn btn-warning"
+                      onclick="return confirm('Отключить эту рассылку?')">
+                Отключить рассылку
+              </button>
+            {% else %}
+              <button type="submit" name="toggle_active" class="btn btn-success">
+                Активировать рассылку
+              </button>
+            {% endif %}
+          </form>
+        {% endif %}
+
         <div class="mt-3">
           <a href="{% url 'campaigns:attempt_list' %}?campaign_id={{ campaign.pk }}"
              class="btn btn-info">

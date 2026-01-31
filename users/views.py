@@ -3,9 +3,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.contrib.auth.views import LoginView, LogoutView
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, DetailView, ListView, TemplateView
+from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
 
-from .forms import CustomUserCreationForm
+from .forms import CustomUserCreationForm, ProfileUpdateForm
 from .models import CustomUser
 from .services import EmailVerificationService
 
@@ -97,3 +97,17 @@ class VerifyEmailView(TemplateView):
         messages.success(request, "Email успешно подтверждён! Теперь вы можете войти в систему.")
 
         return redirect("users:login")
+
+
+class ProfileView(LoginRequiredMixin, UpdateView):
+    model = CustomUser
+    form_class = ProfileUpdateForm
+    template_name = "users/profile.html"
+    success_url = reverse_lazy("users:profile")
+
+    def get_object(self, queryset=None):
+        return self.request.user
+
+    def form_valid(self, form):
+        messages.success(self.request, "Профиль успешно обновлён")
+        return super().form_valid(form)

@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from decouple import config
-from django.conf.global_settings import MEDIA_URL
 from django.contrib.messages import constants as messages
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.

@@ -102,6 +102,11 @@ class Campaign(models.Model):
         verbose_name="Время окончания",
         help_text="Укажите дату и время окончания рассылки",
     )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Активна",
+        help_text="Неактивные рассылки не могут быть отправлены",
+    )
 
     class Meta:
         verbose_name = "Рассылка"
@@ -130,6 +135,8 @@ class Campaign(models.Model):
             self.save(update_fields=["status"])
 
     def can_be_sent(self):
+        if not self.is_active:
+            return False
         current_time = timezone.now()
         return self.start_time <= current_time <= self.end_time
 

@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Мой профиль - Mail Pilot{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row">
+    <div class="col-md-8 offset-md-2">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white py-3">
+          <h4 class="mb-0">Редактирование профиля</h4>
+        </div>
+        <div class="card-body">
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+              </div>
+            {% endif %}
+
+            <div class="mb-3">
+              <label for="{{ form.username.id_for_label }}" class="form-label">{{ form.username.label }}</label>
+              {{ form.username }}
+              {% if form.username.errors %}
+                <div class="text-danger small">{{ form.username.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.phone_number.id_for_label }}" class="form-label">{{ form.phone_number.label }}</label>
+              {{ form.phone_number }}
+              {% if form.phone_number.errors %}
+                <div class="text-danger small">{{ form.phone_number.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.country.id_for_label }}" class="form-label">{{ form.country.label }}</label>
+              {{ form.country }}
+              {% if form.country.errors %}
+                <div class="text-danger small">{{ form.country.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.avatar.id_for_label }}" class="form-label">{{ form.avatar.label }}</label>
+              {{ form.avatar }}
+              {% if user.avatar %}
+                <div class="mt-2">
+                  <img src="{{ user.avatar.url }}" alt="Avatar" class="img-thumbnail" style="max-width: 150px;">
+                </div>
+              {% endif %}
+              {% if form.avatar.errors %}
+                <div class="text-danger small">{{ form.avatar.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Email</label>
+              <input type="text" class="form-control" value="{{ user.email }}" disabled>
+              <small class="text-muted">Email нельзя изменить</small>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex">
+              <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+              <a href="{% url 'home' %}" class="btn btn-secondary">Отмена</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .form-control, .form-select {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.375rem 0.75rem;
+  }
+  .form-control:focus, .form-select:focus {
+    border-color: #8b3a9c;
+    box-shadow: 0 0 0 0.25rem rgba(139, 58, 156, 0.25);
+  }
+</style>
+{% endblock %}
