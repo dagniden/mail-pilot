@@ -19,3 +19,31 @@ class CustomUserCreationForm(UserCreationForm):
             "password1",
             "password2",
         )
+
+
+class ProfileUpdateForm(forms.ModelForm):
+    username = forms.CharField(
+        max_length=150,
+        required=True,
+        label="Имя пользователя",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    phone_number = forms.CharField(
+        max_length=15,
+        required=False,
+        label="Телефон",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    country = forms.CharField(
+        max_length=100,
+        required=False,
+        label="Страна",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+
+    class Meta:
+        model = CustomUser
+        fields = ("username", "phone_number", "avatar", "country")
+        widgets = {
+            "avatar": forms.FileInput(attrs={"class": "form-control"}),
+        }
