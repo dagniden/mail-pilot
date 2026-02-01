@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}Регистрация завершена - Mail Pilot{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-xl-6">
+        <div class="text-center mb-5">
+          <div class="mb-4" style="font-size: 80px;">✉️</div>
+          <h1 class="h2 mb-3">Регистрация почти завершена!</h1>
+          <p class="lead text-muted">
+            Мы отправили письмо с подтверждением на ваш email-адрес.
+          </p>
+        </div>
+
+        <div class="card shadow-sm border-0">
+          <div class="card-body p-4">
+            <h5 class="card-title mb-3">Что делать дальше?</h5>
+            <ol class="ps-3">
+              <li class="mb-2">Проверьте свой почтовый ящик</li>
+              <li class="mb-2">Найдите письмо от <strong>Mail Pilot</strong></li>
+              <li class="mb-2">Перейдите по ссылке для активации аккаунта</li>
+            </ol>
+
+            <div class="alert alert-info mt-4 mb-0" role="alert">
+              <small>
+                <strong>💡 Совет:</strong> Если письмо не пришло, проверьте папку "Спам" или "Промоакции".
+                Ссылка действительна в течение <strong>24 часов</strong>.
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center mt-4">
+          <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+            ← Вернуться на главную
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

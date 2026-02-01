@@ -1,0 +1,93 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Mail Pilot - сервис email-рассылок">
+  <meta name="author" content="Mail Pilot">
+  <title>{% block title %}Mail Pilot - Сервис email-рассылок{% endblock %}</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <style>
+    :root {
+      --primary-purple: #8b3a9c;
+      --primary-purple-hover: #753385;
+      --light-bg: #f8f9fa;
+    }
+
+    .btn-purple {
+      background-color: var(--primary-purple);
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 6px;
+      font-weight: 500;
+      transition: background-color 0.3s;
+    }
+
+    .btn-purple:hover {
+      background-color: var(--primary-purple-hover);
+      color: white;
+    }
+
+    .navbar-brand {
+      font-weight: 600;
+      font-size: 1.3rem;
+    }
+
+    .navbar {
+      padding: 1rem 0;
+    }
+
+    .hero-section {
+      background-color: var(--light-bg);
+      padding: 80px 0;
+    }
+
+    .hero-title {
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .hero-title {
+        font-size: 2rem;
+      }
+    }
+  </style>
+
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <!-- Navbar -->
+  {% include 'includes/inc_menu.html' %}
+
+  <!-- Messages -->
+  {% if messages %}
+    <div class="container mt-3">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Main Content -->
+  <main>
+    {% block content %}
+    {% endblock %}
+  </main>
+
+  <!-- Bootstrap JS -->
+  <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

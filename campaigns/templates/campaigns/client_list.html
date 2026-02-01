@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Клиенты - Mail Pilot{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Список клиентов</h2>
+    <a href="{% url 'campaigns:client_create' %}" class="btn btn-purple">
+      + Добавить клиента
+    </a>
+  </div>
+
+  {% if clients %}
+    <div class="card shadow-sm">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Имя</th>
+                <th>Email</th>
+                <th>Комментарий</th>
+                <th class="text-end">Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for client in clients %}
+                <tr>
+                  <td>
+                    <a href="{{ client.get_absolute_url }}" class="text-decoration-none">
+                      {{ client.full_name }}
+                    </a>
+                  </td>
+                  <td>{{ client.email }}</td>
+                  <td>{{ client.comment|truncatewords:10|default:"-" }}</td>
+                  <td class="text-end">
+                    <a href="{% url 'campaigns:client_update' client.pk %}"
+                       class="btn btn-sm btn-outline-primary">
+                      Редактировать
+                    </a>
+                    <a href="{% url 'campaigns:client_delete' client.pk %}"
+                       class="btn btn-sm btn-outline-danger">
+                      Удалить
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="alert alert-info">
+      У вас пока нет клиентов. <a href="{% url 'campaigns:client_create' %}">Добавьте первого клиента</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
